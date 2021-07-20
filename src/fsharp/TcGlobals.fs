@@ -1249,6 +1249,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   member val attrib_InlineIfLambdaAttribute                = mk_MFCore_attrib "InlineIfLambdaAttribute"
   member val attrib_CLIMutableAttribute                    = mk_MFCore_attrib "CLIMutableAttribute"
   member val attrib_AllowNullLiteralAttribute              = mk_MFCore_attrib "AllowNullLiteralAttribute"
+  member val attrib_AllowOverloadByReturnTypeAttribute     = mk_MFCore_attrib "AllowOverloadByReturnTypeAttribute"
   member val attrib_NoEqualityAttribute                    = mk_MFCore_attrib "NoEqualityAttribute"
   member val attrib_NoComparisonAttribute                  = mk_MFCore_attrib "NoComparisonAttribute"
   member val attrib_CustomEqualityAttribute                = mk_MFCore_attrib "CustomEqualityAttribute"
