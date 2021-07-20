@@ -764,7 +764,8 @@ type SynExpr =
     /// F# syntax: if expr then expr
     /// F# syntax: if expr then expr else expr
     | IfThenElse of
-        ifKeyword: SynIfThenElseStart *
+        ifKeyword: range *
+        isElif: bool *
         ifExpr: SynExpr *
         thenKeyword: range *
         thenExpr: SynExpr *
@@ -1025,14 +1026,6 @@ type SynExpr =
 
     /// Indicates if this expression arises from error recovery
     member IsArbExprAndThusAlreadyReportedError: bool
-
-[<NoEquality; NoComparison; RequireQualifiedAccess>]
-type SynIfThenElseStart =
-    | If of range: Range
-    | Elif of range: Range
-    
-    /// Gets the range of the keyword
-    member Range: range
 
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type SynInterpolatedStringPart =

@@ -622,7 +622,8 @@ type SynExpr =
         range: range
 
     | IfThenElse of
-        ifKeyword: SynIfThenElseStart *
+        ifKeyword: range *
+        isElif: bool *
         ifExpr: SynExpr *
         thenKeyword: range *
         thenExpr: SynExpr *
@@ -920,16 +921,6 @@ type SynExpr =
         match this with
         | SynExpr.ArbitraryAfterError _ -> true
         | _ -> false
-
-[<NoEquality; NoComparison; RequireQualifiedAccess>]
-type SynIfThenElseStart =
-    | If of range: Range
-    | Elif of range: Range
-
-    member this.Range =
-        match this with
-        | If m
-        | Elif m -> m
 
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type SynInterpolatedStringPart =
