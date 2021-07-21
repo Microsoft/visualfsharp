@@ -12,6 +12,7 @@ open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.Symbols
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
+open TestFramework
 open FsUnit
 open NUnit.Framework
 
@@ -65,7 +66,7 @@ let readRefs (folder : string) (projectFile: string) =
 let checker = FSharpChecker.Create()
 
 type TempFile(ext, contents: string) =
-    let tmpFile =  Path.ChangeExtension(Path.GetTempFileName() , ext)
+    let tmpFile =  Path.ChangeExtension(tryCreateTemporaryFileName (), ext)
     do FileSystem.OpenFileForWriteShim(tmpFile).Write(contents)
 
     interface IDisposable with
@@ -171,8 +172,8 @@ let mkProjectCommandLineArgsForScript (dllName, fileNames) =
 #endif
 
 let mkTestFileAndOptions source additionalArgs =
-    let fileName = Path.ChangeExtension(Path.GetTempFileName(), ".fs")
-    let project = Path.GetTempFileName()
+    let fileName = Path.ChangeExtension(tryCreateTemporaryFileName (), ".fs")
+    let project = tryCreateTemporaryFileName ()
     let dllName = Path.ChangeExtension(project, ".dll")
     let projFileName = Path.ChangeExtension(project, ".fsproj")
     let fileSource1 = "module M"
