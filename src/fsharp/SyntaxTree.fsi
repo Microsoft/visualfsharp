@@ -764,8 +764,12 @@ type SynExpr =
     /// F# syntax: if expr then expr
     /// F# syntax: if expr then expr else expr
     | IfThenElse of
+        ifKeyword: range *
+        isElif: bool *
         ifExpr: SynExpr *
+        thenKeyword: range *
         thenExpr: SynExpr *
+        elseKeyword: range option *
         elseExpr: SynExpr option *
         spIfToThen: DebugPointAtBinding *
         isFromErrorRecovery: bool *
