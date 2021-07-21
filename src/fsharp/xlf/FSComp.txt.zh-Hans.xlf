@@ -177,6 +177,11 @@
         <target state="translated">空格松弛法</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureRelaxWhitespace2">
+        <source>whitespace relaxation v2</source>
+        <target state="new">whitespace relaxation v2</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureResumableStateMachines">
         <source>resumable state machines</source>
         <target state="translated">可恢复状态机</target>

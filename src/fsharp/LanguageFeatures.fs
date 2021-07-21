@@ -21,6 +21,7 @@ type LanguageFeature =
     | SingleUnderscorePattern
     | WildCardInForLoop
     | RelaxWhitespace
+    | RelaxWhitespace2
     | NameOf
     | ImplicitYield
     | OpenTypeDeclaration
@@ -80,6 +81,7 @@ type LanguageVersion (specifiedVersionAsString) =
             LanguageFeature.StringInterpolation, languageVersion50
 
             // F# preview
+            LanguageFeature.RelaxWhitespace2, previewVersion
             LanguageFeature.OverloadsForCustomOperations, previewVersion
             LanguageFeature.ExpandedMeasurables, previewVersion
             LanguageFeature.FromEndSlicing, previewVersion
@@ -147,6 +149,7 @@ type LanguageVersion (specifiedVersionAsString) =
         | LanguageFeature.SingleUnderscorePattern -> FSComp.SR.featureSingleUnderscorePattern()
         | LanguageFeature.WildCardInForLoop -> FSComp.SR.featureWildCardInForLoop()
         | LanguageFeature.RelaxWhitespace -> FSComp.SR.featureRelaxWhitespace()
+        | LanguageFeature.RelaxWhitespace2 -> FSComp.SR.featureRelaxWhitespace2()
         | LanguageFeature.NameOf -> FSComp.SR.featureNameOf()
         | LanguageFeature.ImplicitYield -> FSComp.SR.featureImplicitYield()
         | LanguageFeature.OpenTypeDeclaration -> FSComp.SR.featureOpenTypeDeclaration()
