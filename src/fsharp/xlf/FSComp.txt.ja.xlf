@@ -417,6 +417,11 @@
         <target state="translated">登録された PackageManager によって、#i はサポートされていません</target>
         <note />
       </trans-unit>
+      <trans-unit id="poundiNotSupportedByRegisteredDependencyManagers">
+        <source>#i is not supported by the registered PackageManagers</source>
+        <target state="translated">登録された PackageManager によって、#i はサポートされていません</target>
+        <note />
+      </trans-unit>
       <trans-unit id="reprStateMachineInvalidForm">
         <source>The state machine has an unexpected form</source>
         <target state="translated">ステート マシンに予期しない形式があります</target>
