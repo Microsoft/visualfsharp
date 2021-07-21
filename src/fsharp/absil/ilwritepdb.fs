@@ -28,7 +28,7 @@ type BlobBuildingStream () =
     override _.CanWrite = true
     override _.CanRead  = false
     override _.CanSeek  = false
-    override _.Length   = int64 (builder.Count)
+    override _.Length   = int64 builder.Count
 
     override _.Write(buffer: byte array, offset: int, count: int) = builder.WriteBytes(buffer, offset, count)
     override _.WriteByte(value: byte) = builder.WriteByte value
@@ -152,15 +152,15 @@ let cvMagicNumber = 0x53445352L
 let pdbGetCvDebugInfo (mvid: byte[]) (timestamp: int32) (filepath: string) (cvChunk: BinaryChunk) =
     let iddCvBuffer =
         // Debug directory entry
-        let path = (System.Text.Encoding.UTF8.GetBytes filepath)
+        let path = (Encoding.UTF8.GetBytes filepath)
         let buffer = Array.zeroCreate (sizeof<int32> + mvid.Length + sizeof<int32> + path.Length + 1)
-        let (offset, size) = (0, sizeof<int32>)                    // Magic Number RSDS dword: 0x53445352L
+        let offset, size = (0, sizeof<int32>)                    // Magic Number RSDS dword: 0x53445352L
         Buffer.BlockCopy(BitConverter.GetBytes cvMagicNumber, 0, buffer, offset, size)
-        let (offset, size) = (offset + size, mvid.Length)         // mvid Guid
+        let offset, size = (offset + size, mvid.Length)         // mvid Guid
         Buffer.BlockCopy(mvid, 0, buffer, offset, size)
-        let (offset, size) = (offset + size, sizeof<int32>)       // # of pdb files generated (1)
+        let offset, size = (offset + size, sizeof<int32>)       // # of pdb files generated (1)
         Buffer.BlockCopy(BitConverter.GetBytes 1, 0, buffer, offset, size)
-        let (offset, size) = (offset + size, path.Length)         // Path to pdb string
+        let offset, size = (offset + size, path.Length)         // Path to pdb string
         Buffer.BlockCopy(path, 0, buffer, offset, size)
         buffer
     { iddCharacteristics = 0                                                    // Reserved
@@ -176,11 +176,11 @@ let pdbMagicNumber= 0x4244504dL
 let pdbGetEmbeddedPdbDebugInfo (embeddedPdbChunk: BinaryChunk) (uncompressedLength: int64) (stream: MemoryStream) =
     let iddPdbBuffer =
         let buffer = Array.zeroCreate (sizeof<int32> + sizeof<int32> + int(stream.Length))
-        let (offset, size) = (0, sizeof<int32>)                    // Magic Number dword: 0x4244504dL
+        let offset, size = (0, sizeof<int32>)                    // Magic Number dword: 0x4244504dL
         Buffer.BlockCopy(BitConverter.GetBytes pdbMagicNumber, 0, buffer, offset, size)
-        let (offset, size) = (offset + size, sizeof<int32>)        // Uncompressed size
-        Buffer.BlockCopy(BitConverter.GetBytes((int uncompressedLength)), 0, buffer, offset, size)
-        let (offset, size) = (offset + size, int(stream.Length))   // Uncompressed size
+        let offset, size = (offset + size, sizeof<int32>)        // Uncompressed size
+        Buffer.BlockCopy(BitConverter.GetBytes (int uncompressedLength), 0, buffer, offset, size)
+        let offset, size = (offset + size, int(stream.Length))   // Uncompressed size
         Buffer.BlockCopy(stream.ToArray(), 0, buffer, offset, size)
         buffer
     { iddCharacteristics = 0                                                    // Reserved
@@ -288,9 +288,9 @@ let generatePortablePdb (embedAllSource: bool) (embedSourceList: string list) (s
 
         metadata.GetOrAddBlob writer
 
-    let corSymLanguageTypeId = System.Guid(0xAB4F38C9u, 0xB6E6us, 0x43baus, 0xBEuy, 0x3Buy, 0x58uy, 0x08uy, 0x0Buy, 0x2Cuy, 0xCCuy, 0xE3uy)
-    let embeddedSourceId     = System.Guid(0x0e8a571bu, 0x6926us, 0x466eus, 0xb4uy, 0xaduy, 0x8auy, 0xb0uy, 0x46uy, 0x11uy, 0xf5uy, 0xfeuy)
-    let sourceLinkId         = System.Guid(0xcc110556u, 0xa091us, 0x4d38us, 0x9fuy, 0xecuy, 0x25uy, 0xabuy, 0x9auy, 0x35uy, 0x1auy, 0x6auy)
+    let corSymLanguageTypeId = Guid(0xAB4F38C9u, 0xB6E6us, 0x43baus, 0xBEuy, 0x3Buy, 0x58uy, 0x08uy, 0x0Buy, 0x2Cuy, 0xCCuy, 0xE3uy)
+    let embeddedSourceId     = Guid(0x0e8a571bu, 0x6926us, 0x466eus, 0xb4uy, 0xaduy, 0x8auy, 0xb0uy, 0x46uy, 0x11uy, 0xf5uy, 0xfeuy)
+    let sourceLinkId         = Guid(0xcc110556u, 0xa091us, 0x4d38us, 0x9fuy, 0xecuy, 0x25uy, 0xabuy, 0x9auy, 0x35uy, 0x1auy, 0x6auy)
 
     /// <summary>
     /// The maximum number of bytes in to write out uncompressed.
@@ -313,7 +313,7 @@ let generatePortablePdb (embedAllSource: bool) (embedSourceList: string list) (s
                 use stream = FileSystem.OpenFileForReadShim(file)
 
                 let length64 = stream.Length
-                if length64 > int64 (Int32.MaxValue) then raise (new IOException("File is too long"))
+                if length64 > int64 Int32.MaxValue then raise (new IOException("File is too long"))
 
                 let builder = new BlobBuildingStream()
                 let length = int length64
@@ -348,7 +348,7 @@ let generatePortablePdb (embedAllSource: bool) (embedSourceList: string list) (s
                 | None ->
                     let dbgInfo =
                         (serializeDocumentName doc.File,
-                         metadata.GetOrAddGuid(System.Guid.Empty),
+                         metadata.GetOrAddGuid(Guid.Empty),
                          metadata.GetOrAddBlob(ImmutableArray<byte>.Empty),
                          metadata.GetOrAddGuid corSymLanguageTypeId) |> metadata.AddDocument
                     dbgInfo
@@ -374,7 +374,7 @@ let generatePortablePdb (embedAllSource: bool) (embedSourceList: string list) (s
                 | _ ->
                     match minfo.Range with
                     | None -> Array.empty
-                    | Some (_,_) -> minfo.SequencePoints
+                    | Some _ -> minfo.SequencePoints
 
             let builder = new BlobBuilder()
             builder.WriteCompressedInteger(minfo.LocalSignatureToken)
@@ -404,7 +404,7 @@ let generatePortablePdb (embedAllSource: bool) (embedSourceList: string list) (s
                 // Initial document:  When sp's spread over more than one document we put the initial document here.
                 let singleDocumentIndex = tryGetSingleDocumentIndex
                 if singleDocumentIndex = -1 then
-                    builder.WriteCompressedInteger( MetadataTokens.GetRowNumber(DocumentHandle.op_Implicit(getDocumentHandle (sps.[0].Document))) )
+                    builder.WriteCompressedInteger( MetadataTokens.GetRowNumber(DocumentHandle.op_Implicit(getDocumentHandle sps.[0].Document)) )
 
                 let mutable previousNonHiddenStartLine = -1
                 let mutable previousNonHiddenStartColumn = 0
@@ -413,7 +413,7 @@ let generatePortablePdb (embedAllSource: bool) (embedSourceList: string list) (s
 
                     if singleDocumentIndex <> -1 && sps.[i].Document <> singleDocumentIndex then
                         builder.WriteCompressedInteger( 0 )
-                        builder.WriteCompressedInteger( MetadataTokens.GetRowNumber(DocumentHandle.op_Implicit(getDocumentHandle (sps.[i].Document))) )
+                        builder.WriteCompressedInteger( MetadataTokens.GetRowNumber(DocumentHandle.op_Implicit(getDocumentHandle sps.[i].Document)) )
                     else
                         //=============================================================================================================================================
                         // Sequence-point-record
@@ -560,12 +560,12 @@ let writePortablePdbInfo (contentId: BlobContentId) (stream: MemoryStream) showT
     use fs = FileSystem.OpenFileForWriteShim(fpdb, fileMode = FileMode.Create, fileAccess = FileAccess.ReadWrite)
     stream.WriteTo fs
     reportTime showTimes "PDB: Closed"
-    pdbGetDebugInfo (contentId.Guid.ToByteArray()) (int32 (contentId.Stamp)) (PathMap.apply pathMap fpdb) cvChunk None deterministicPdbChunk checksumPdbChunk algorithmName checksum 0L None embeddedPdb deterministic
+    pdbGetDebugInfo (contentId.Guid.ToByteArray()) (int32 contentId.Stamp) (PathMap.apply pathMap fpdb) cvChunk None deterministicPdbChunk checksumPdbChunk algorithmName checksum 0L None embeddedPdb deterministic
 
 let embedPortablePdbInfo (uncompressedLength: int64)  (contentId: BlobContentId) (stream: MemoryStream) showTimes fpdb cvChunk pdbChunk deterministicPdbChunk checksumPdbChunk algorithmName checksum embeddedPdb deterministic =
     reportTime showTimes "PDB: Closed"
     let fn = Path.GetFileName fpdb
-    pdbGetDebugInfo (contentId.Guid.ToByteArray()) (int32 (contentId.Stamp)) fn cvChunk (Some pdbChunk) deterministicPdbChunk checksumPdbChunk algorithmName checksum uncompressedLength (Some stream) embeddedPdb deterministic
+    pdbGetDebugInfo (contentId.Guid.ToByteArray()) (int32 contentId.Stamp) fn cvChunk (Some pdbChunk) deterministicPdbChunk checksumPdbChunk algorithmName checksum uncompressedLength (Some stream) embeddedPdb deterministic
 
 #if !FX_NO_PDB_WRITER
 //---------------------------------------------------------------------
@@ -690,7 +690,7 @@ let (?) this memb (args:'Args) : 'R =
     // Get array of 'obj' arguments for the reflection call
     let args =
         if typeof<'Args> = typeof<unit> then [| |]
-        elif FSharpType.IsTuple typeof<'Args> then Microsoft.FSharp.Reflection.FSharpValue.GetTupleFields args
+        elif FSharpType.IsTuple typeof<'Args> then FSharpValue.GetTupleFields args
         else [| box args |]
 
     // Get methods and perform overload resolution
@@ -706,7 +706,7 @@ let monoCompilerSvc = new AssemblyName("Mono.CompilerServices.SymbolWriter, Vers
 let ctor (asmName: AssemblyName) clsName (args: obj[]) =
     let asm = Assembly.Load asmName
     let ty = asm.GetType clsName
-    System.Activator.CreateInstance(ty, args)
+    Activator.CreateInstance(ty, args)
 
 let createSourceMethodImpl (name: string) (token: int) (namespaceID: int) =
     ctor monoCompilerSvc "Mono.CompilerServices.SymbolWriter.SourceMethodImpl" [| box name; box token; box namespaceID |]
@@ -773,7 +773,7 @@ let writeMdbInfo fmdb f info =
         | _ -> ()
 
     // Finalize - MDB requires the MVID of the generated .NET module
-    let moduleGuid = new System.Guid(info.ModuleID |> Array.map byte)
+    let moduleGuid = new Guid(info.ModuleID |> Array.map byte)
     wr?WriteSymbolFile moduleGuid
 #endif
 

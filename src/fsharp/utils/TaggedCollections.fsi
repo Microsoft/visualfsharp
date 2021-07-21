@@ -112,7 +112,7 @@ namespace Internal.Utilities.Collections.Tagged
 
         interface System.Collections.IEnumerable
 
-        interface System.IComparable
+        interface IComparable
 
         override Equals : obj -> bool
 
@@ -216,7 +216,7 @@ namespace Internal.Utilities.Collections.Tagged
         
         interface System.Collections.IEnumerable 
 
-        interface System.IComparable
+        interface IComparable
 
         override Equals : obj -> bool
 

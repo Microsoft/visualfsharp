@@ -40,27 +40,27 @@ type AccessorDomain =
     static member CustomGetHashCode: ad:AccessorDomain -> int
   
 /// Indicates if an F# item is accessible 
-val IsAccessible: ad:AccessorDomain -> taccess:TypedTree.Accessibility -> bool
+val IsAccessible: ad:AccessorDomain -> taccess:Accessibility -> bool
 
 /// Indicates if an entity is accessible
-val IsEntityAccessible: amap:ImportMap -> m:range -> ad:AccessorDomain -> tcref:TypedTree.TyconRef -> bool
+val IsEntityAccessible: amap:ImportMap -> m:range -> ad:AccessorDomain -> tcref:TyconRef -> bool
 
 /// Check that an entity is accessible
-val CheckTyconAccessible: amap:ImportMap -> m:range -> ad:AccessorDomain -> tcref:TypedTree.TyconRef -> bool
+val CheckTyconAccessible: amap:ImportMap -> m:range -> ad:AccessorDomain -> tcref:TyconRef -> bool
 
 /// Indicates if a type definition and its representation contents are accessible
-val IsTyconReprAccessible: amap:ImportMap -> m:range -> ad:AccessorDomain -> tcref:TypedTree.TyconRef -> bool
+val IsTyconReprAccessible: amap:ImportMap -> m:range -> ad:AccessorDomain -> tcref:TyconRef -> bool
 
 /// Check that a type definition and its representation contents are accessible
-val CheckTyconReprAccessible: amap:ImportMap -> m:range -> ad:AccessorDomain -> tcref:TypedTree.TyconRef -> bool
+val CheckTyconReprAccessible: amap:ImportMap -> m:range -> ad:AccessorDomain -> tcref:TyconRef -> bool
 
 /// Indicates if a type is accessible (both definition and instantiation)
-val IsTypeAccessible: g:TcGlobals -> amap:ImportMap -> m:range -> ad:AccessorDomain -> ty:TypedTree.TType -> bool
+val IsTypeAccessible: g:TcGlobals -> amap:ImportMap -> m:range -> ad:AccessorDomain -> ty:TType -> bool
 
-val IsTypeInstAccessible: g:TcGlobals -> amap:ImportMap -> m:range -> ad:AccessorDomain -> tinst:TypedTree.TypeInst -> bool
+val IsTypeInstAccessible: g:TcGlobals -> amap:ImportMap -> m:range -> ad:AccessorDomain -> tinst:TypeInst -> bool
 
 /// Indicate if a provided member is accessible
-val IsProvidedMemberAccessible: amap:ImportMap -> m:range -> ad:AccessorDomain -> ty:TypedTree.TType -> access:ILMemberAccess -> bool
+val IsProvidedMemberAccessible: amap:ImportMap -> m:range -> ad:AccessorDomain -> ty:TType -> access:ILMemberAccess -> bool
 
 /// Compute the accessibility of a provided member
 val ComputeILAccess: isPublic:bool -> isFamily:bool -> isFamilyOrAssembly:bool -> isFamilyAndAssembly:bool -> ILMemberAccess
@@ -75,9 +75,9 @@ val GetILAccessOfILPropInfo: ILPropInfo -> ILMemberAccess
 
 val IsILPropInfoAccessible: g:TcGlobals -> amap:ImportMap -> m:range -> ad:AccessorDomain -> pinfo:ILPropInfo -> bool
 
-val IsValAccessible: ad:AccessorDomain -> vref:TypedTree.ValRef -> bool
+val IsValAccessible: ad:AccessorDomain -> vref:ValRef -> bool
 
-val CheckValAccessible: m:range -> ad:AccessorDomain -> vref:TypedTree.ValRef -> unit
+val CheckValAccessible: m:range -> ad:AccessorDomain -> vref:ValRef -> unit
 
 val IsUnionCaseAccessible: amap:ImportMap -> m:range -> ad:AccessorDomain -> ucref:TypedTree.UnionCaseRef -> bool
 

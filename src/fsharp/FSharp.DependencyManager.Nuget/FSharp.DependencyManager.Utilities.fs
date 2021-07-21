@@ -10,7 +10,7 @@ open System.Runtime.InteropServices
 open Internal.Utilities.FSharpEnvironment
 
 [<AttributeUsage(AttributeTargets.Assembly ||| AttributeTargets.Class , AllowMultiple = false)>]
-type DependencyManagerAttribute() = inherit System.Attribute()
+type DependencyManagerAttribute() = inherit Attribute()
 
 /// The result of building the package resolution files.
 type PackageBuildResolutionResult =

@@ -79,10 +79,10 @@ type public IlxGenResults =
 /// Used to support the compilation-inversion operations "ClearGeneratedValue" and "LookupGeneratedValue"
 type ExecutionContext =
     {
-      LookupFieldRef: (ILFieldRef -> FieldInfo)
-      LookupMethodRef: (ILMethodRef -> MethodInfo)
-      LookupTypeRef: (ILTypeRef -> Type)
-      LookupType: (ILType -> Type)
+      LookupFieldRef: ILFieldRef -> FieldInfo
+      LookupMethodRef: ILMethodRef -> MethodInfo
+      LookupTypeRef: ILTypeRef -> Type
+      LookupType: ILType -> Type
     } 
 
 /// An incremental ILX code generator for a single assembly
@@ -107,7 +107,7 @@ type public IlxAssemblyGenerator =
     member ForceSetGeneratedValue: ExecutionContext * Val * obj -> unit
 
     /// Invert the compilation of the given value and return its current dynamic value and its compiled System.Type
-    member LookupGeneratedValue: ExecutionContext * Val -> (obj * System.Type) option
+    member LookupGeneratedValue: ExecutionContext * Val -> (obj * Type) option
 
 val ReportStatistics: TextWriter -> unit
 

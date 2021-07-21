@@ -124,7 +124,7 @@ type ItemKeyStore(mmf: MemoryMappedFile, length) =
         checkDispose ()
 
         let builder = ItemKeyStoreBuilder()
-        builder.Write(Range.range0, item)
+        builder.Write(range0, item)
         match builder.TryBuildAndReset() with
         | None -> Seq.empty
         | Some(singleStore : ItemKeyStore) ->

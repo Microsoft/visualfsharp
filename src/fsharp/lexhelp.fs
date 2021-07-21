@@ -38,7 +38,7 @@ type LightSyntaxStatus(initial:bool,warn:bool) =
 /// Manage lexer resources (string interning)
 [<Sealed>]
 type LexResourceManager(?capacity: int) =
-    let strings = new System.Collections.Concurrent.ConcurrentDictionary<string, Parser.token>(Environment.ProcessorCount, defaultArg capacity 1024)
+    let strings = new System.Collections.Concurrent.ConcurrentDictionary<string, token>(Environment.ProcessorCount, defaultArg capacity 1024)
     member x.InternIdentifierToken(s) = 
         match strings.TryGetValue s with
         | true, res -> res
@@ -109,7 +109,7 @@ let stringBufferAsString (buf: ByteBuffer) =
         let lo = buf.Span.[i*2]
         let c = char (((int hi) * 256) + (int lo))
         chars.[i] <- c
-    System.String(chars)
+    String(chars)
 
 /// When lexing bytearrays we don't expect to see any unicode stuff. 
 /// Likewise when lexing string constants we shouldn't see any trigraphs > 127 
@@ -398,7 +398,7 @@ module Keywords =
                 else PathMap.applyDir args.pathMap dirname
                 |> fun dir -> KEYWORD_STRING(s, dir)
             | "__SOURCE_FILE__" -> 
-                KEYWORD_STRING (s, System.IO.Path.GetFileName((FileIndex.fileOfFileIndex lexbuf.StartPos.FileIndex))) 
+                KEYWORD_STRING (s, System.IO.Path.GetFileName (FileIndex.fileOfFileIndex lexbuf.StartPos.FileIndex)) 
             | "__LINE__" -> 
                 KEYWORD_STRING (s, string lexbuf.StartPos.Line)
             | _ -> 

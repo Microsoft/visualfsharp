@@ -81,7 +81,7 @@ let splitNamespaceMemoized nm = splitNamespace nm
 
 // ++GLOBAL MUTABLE STATE (concurrency-safe)
 let memoizeNamespaceArrayTable =
-    Concurrent.ConcurrentDictionary<string, string[]>()
+    ConcurrentDictionary<string, string[]>()
 
 let splitNamespaceToArray nm =
     memoizeNamespaceArrayTable.GetOrAdd (nm, fun nm ->
@@ -281,11 +281,11 @@ module SHA1 =
         h0, h1, h2, h3, h4
 
     let sha1HashBytes s =
-        let (_h0, _h1, _h2, h3, h4) = sha1Hash { stream = s; pos = 0; eof = false }   // the result of the SHA algorithm is stored in registers 3 and 4
+        let _h0, _h1, _h2, h3, h4 = sha1Hash { stream = s; pos = 0; eof = false }   // the result of the SHA algorithm is stored in registers 3 and 4
         Array.map byte [| b0 h4; b1 h4; b2 h4; b3 h4; b0 h3; b1 h3; b2 h3; b3 h3; |]
 
     let sha1HashInt64 s =
-        let (_h0,_h1,_h2,h3,h4) = sha1Hash { stream = s; pos = 0; eof = false }   // the result of the SHA algorithm is stored in registers 3 and 4
+        let _h0,_h1,_h2,h3,h4 = sha1Hash { stream = s; pos = 0; eof = false }   // the result of the SHA algorithm is stored in registers 3 and 4
         (int64 h3 <<< 32) ||| int64 h4
 
 let sha1HashBytes s = SHA1.sha1HashBytes s
@@ -307,7 +307,7 @@ type ILVersionInfo =
         { Major = major; Minor = minor; Build = build; Revision = revision }
 
     /// For debugging
-    override x.ToString() = sprintf "ILVersionInfo: %u %u %u %u" (x.Major) (x.Minor) (x.Build) (x.Revision)
+    override x.ToString() = sprintf "ILVersionInfo: %u %u %u %u" x.Major x.Minor x.Build x.Revision
 
 
 type Locale = string
@@ -354,14 +354,14 @@ type ILAssemblyRef(data) =
     let pkToken key =
         match key with
         | Some (PublicKey bytes) -> Some (PublicKey (SHA1.sha1HashBytes bytes))
-        | Some (PublicKeyToken token) -> Some (PublicKey (token))
+        | Some (PublicKeyToken token) -> Some (PublicKey token)
         | None -> None
 
     let uniqueStamp =
-        AssemblyRefUniqueStampGenerator.Encode { data with assemRefPublicKeyInfo = pkToken (data.assemRefPublicKeyInfo) }
+        AssemblyRefUniqueStampGenerator.Encode { data with assemRefPublicKeyInfo = pkToken data.assemRefPublicKeyInfo }
 
     let uniqueIgnoringVersionStamp =
-        AssemblyRefUniqueStampGenerator.Encode { data with assemRefVersion = None; assemRefPublicKeyInfo = pkToken (data.assemRefPublicKeyInfo) }
+        AssemblyRefUniqueStampGenerator.Encode { data with assemRefVersion = None; assemRefPublicKeyInfo = pkToken data.assemRefPublicKeyInfo }
 
     member x.Name=data.assemRefName
 
@@ -427,7 +427,7 @@ type ILAssemblyRef(data) =
         add aref.Name
         match aref.Version with
         | None -> ()
-        | Some (version) ->
+        | Some version ->
             add ", Version="
             add (string (int version.Major))
             add "."
@@ -975,7 +975,7 @@ type ILAttribElem =
   | TypeRef of ILTypeRef option
   | Array of ILType * ILAttribElem list
 
-type ILAttributeNamedArg = (string * ILType * bool * ILAttribElem)
+type ILAttributeNamedArg = string * ILType * bool * ILAttribElem
 
 [<RequireQualifiedAccess; StructuralEquality; StructuralComparison; StructuredFormatDisplay("{DebugText}")>]
 type ILAttribute =
@@ -1228,7 +1228,7 @@ type ILExceptionClause =
 
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
 type ILExceptionSpec =
-    { Range: (ILCodeLabel * ILCodeLabel)
+    { Range: ILCodeLabel * ILCodeLabel
       Clause: ILExceptionClause }
 
 /// Indicates that a particular local variable has a particular source
@@ -1241,7 +1241,7 @@ type ILLocalDebugMapping =
 
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
 type ILLocalDebugInfo =
-    { Range: (ILCodeLabel * ILCodeLabel)
+    { Range: ILCodeLabel * ILCodeLabel
       DebugMappings: ILLocalDebugMapping list }
 
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
@@ -1734,7 +1734,7 @@ type ILMethodDef (name: string, attributes: MethodAttributes, implAttributes: Me
 type MethodDefMap = Map<string, ILMethodDef list>
 
 [<Sealed>]
-type ILMethodDefs(f : (unit -> ILMethodDef[])) =
+type ILMethodDefs(f : unit -> ILMethodDef[]) =
 
     let mutable array = InlineDelayInit<_>(f)
     let mutable dict = InlineDelayInit<_>(fun () ->
@@ -3138,7 +3138,7 @@ let mkRefForILField scope (tdefs, tdef) (fdef: ILFieldDef) = mkILFieldRef (mkRef
 let prependInstrsToClassCtor instrs tag cd =
     cdef_cctorCode2CodeOrCreate tag (prependInstrsToMethod instrs) cd
 
-let mkILField (isStatic, nm, ty, (init: ILFieldInit option), (at: byte [] option), access, isLiteral) =
+let mkILField (isStatic, nm, ty, init: ILFieldInit option, at: byte [] option, access, isLiteral) =
      ILFieldDef(name=nm,
                 fieldType=ty,
                 attributes=
@@ -3250,8 +3250,8 @@ let mkILSimpleStorageCtorWithParamNames (tag, baseTySpec, ty, extraParams, flds,
       match baseTySpec with
         None -> []
       | Some tspec ->
-          ([ mkLdarg0
-             mkNormalCall (mkILCtorMethSpecForTy (mkILBoxedType tspec, [])) ])
+          [ mkLdarg0
+            mkNormalCall (mkILCtorMethSpecForTy (mkILBoxedType tspec, [])) ]
     mkILStorageCtorWithParamNames (tag, preblock, ty, extraParams, flds, access)
 
 let addParamNames flds =
@@ -3373,7 +3373,7 @@ let buildILCode (_methName: string) lab2pc instrs tryspecs localspecs : ILCode =
 // Detecting Delegates
 // --------------------------------------------------------------------
 
-let mkILDelegateMethods (access) (ilg: ILGlobals) (iltyp_AsyncCallback, iltyp_IAsyncResult) (parms, rtv: ILReturn) =
+let mkILDelegateMethods access (ilg: ILGlobals) (iltyp_AsyncCallback, iltyp_IAsyncResult) (parms, rtv: ILReturn) =
     let rty = rtv.Type
     let one nm args ret =
         let mdef = mkILNonGenericVirtualMethod (nm, access, args, mkILReturn ret, MethodBody.Abstract)
@@ -3501,7 +3501,7 @@ let sigptr_get_z_i32 bytes sigptr =
 
 let sigptr_get_serstring bytes sigptr =
     let len, sigptr = sigptr_get_z_i32 bytes sigptr
-    sigptr_get_string ( len) bytes sigptr
+    sigptr_get_string len bytes sigptr
 
 let sigptr_get_serstring_possibly_null bytes sigptr =
     let b0, new_sigptr = sigptr_get_byte bytes sigptr
@@ -3662,7 +3662,7 @@ let parseILVersion (vstr : string) =
     // matches "v1.2.3.4" or "1.2.3.4". Note, if numbers are missing, returns -1 (not 0).
     let mutable vstr = vstr.TrimStart [|'v'|]
     // if the version string contains wildcards, replace them
-    let versionComponents = vstr.Split ([|'.'|])
+    let versionComponents = vstr.Split [|'.'|]
 
     // account for wildcards
     if versionComponents.Length > 2 then
@@ -3681,7 +3681,7 @@ let parseILVersion (vstr : string) =
         versionComponents.[3] <- defaultRevision.ToString()
         vstr <- String.Join (".", versionComponents)
 
-    let version = System.Version vstr
+    let version = Version vstr
     let zero32 n = if n < 0 then 0us else uint16 n
     // since the minor revision will be -1 if none is specified, we need to truncate to 0 to not break existing code
     let minorRevision = if version.Revision = -1 then 0us else uint16 version.MinorRevision
@@ -3778,7 +3778,7 @@ let encodeCustomAttrNamedArg (nm, ty, prop, elem) =
 let encodeCustomAttrArgs (mspec: ILMethodSpec) (fixedArgs: list<_>) (namedArgs: list<_>) =
     let argtys = mspec.MethodRef.ArgTypes
     [| yield! [| 0x01uy; 0x00uy; |]
-       for (argty, fixedArg) in Seq.zip argtys fixedArgs do
+       for argty, fixedArg in Seq.zip argtys fixedArgs do
           yield! encodeCustomAttrValue argty fixedArg
        yield! u16AsBytes (uint16 namedArgs.Length)
        for namedArg in namedArgs do
@@ -3808,15 +3808,15 @@ let getCustomAttrData cattr =
 //      as a compressed int to indicate the size followed by an array of UTF8 characters.)
 // - A set of properties, encoded as the named arguments to a custom attribute would be (as
 //      in §23.3, beginning with NumNamed).
-let mkPermissionSet (action, attributes: list<(ILTypeRef * (string * ILType * ILAttribElem) list)>) =
+let mkPermissionSet (action, attributes: list<ILTypeRef * (string * ILType * ILAttribElem) list>) =
     let bytes =
         [| yield (byte '.')
            yield! z_unsigned_int attributes.Length
-           for (tref: ILTypeRef, props) in attributes do
+           for tref: ILTypeRef, props in attributes do
               yield! encodeCustomAttrString tref.QualifiedName
               let bytes =
                   [| yield! z_unsigned_int props.Length
-                     for (nm, ty, value) in props do
+                     for nm, ty, value in props do
                          yield! encodeCustomAttrNamedArg (nm, ty, true, value)|]
               yield! z_unsigned_int bytes.Length
               yield! bytes |]
@@ -3881,12 +3881,12 @@ type ILTypeSigParser (tstring : string) =
                 drop() // step to the number
                 // fetch the arity
                 let arity =
-                    while (int(here()) >= (int('0'))) && (int(here()) <= ((int('9')))) && (int(peek()) >= (int('0'))) && (int(peek()) <= ((int('9')))) do step()
+                    while (int(here()) >= (int('0'))) && (int(here()) <= (int('9'))) && (int(peek()) >= (int('0'))) && (int(peek()) <= (int('9'))) do step()
                     Int32.Parse(take())
                 // skip the '['
                 drop()
                 // get the specializations
-                typeName+"`"+(arity.ToString()), Some(([for _i in 0..arity-1 do yield x.ParseType()]))
+                typeName+"`"+(arity.ToString()), Some [for _i in 0..arity-1 do yield x.ParseType()]
             else
                 typeName, None
 
@@ -4061,7 +4061,7 @@ let decodeILAttribData (ca: ILAttribute) =
         if ( (* 0x50 = (int et) || *) 0x55 = (int et)) then
             let qualified_tname, sigptr = sigptr_get_serstring bytes sigptr
             let unqualified_tname, rest =
-                let pieces = qualified_tname.Split (',')
+                let pieces = qualified_tname.Split ','
                 if pieces.Length > 1 then
                     pieces.[0], Some (String.concat "," pieces.[1..])
                 else
@@ -4217,7 +4217,7 @@ and refs_of_local s loc = refs_of_typ s loc.Type
 and refs_of_mbody s x =
     match x with
     | MethodBody.IL il -> refs_of_ilmbody s il.Value
-    | MethodBody.PInvoke (attr) -> refs_of_modref s attr.Value.Where
+    | MethodBody.PInvoke attr -> refs_of_modref s attr.Value.Where
     | _ -> ()
 
 and refs_of_mdef s (md: ILMethodDef) =

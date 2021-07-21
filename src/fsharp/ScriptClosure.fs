@@ -86,7 +86,7 @@ module ScriptPreprocessClosure =
     type ClosureFile = ClosureFile of string * range * ParsedInput option * (PhasedDiagnostic * FSharpDiagnosticSeverity) list * (PhasedDiagnostic * FSharpDiagnosticSeverity) list * (string * range) list // filename, range, errors, warnings, nowarns
 
     type Observed() =
-        let seen = System.Collections.Generic.Dictionary<_, bool>()
+        let seen = Dictionary<_, bool>()
         member ob.SetSeen check =
             if not(seen.ContainsKey check) then
                 seen.Add(check, true)
@@ -154,7 +154,7 @@ module ScriptPreprocessClosure =
             | None ->
                 let errorLogger = CapturingErrorLogger("ScriptDefaultReferences")
                 use unwindEL = PushErrorLoggerPhaseUntilUnwind (fun _ -> errorLogger)
-                let references, useDotNetFramework = tcConfigB.FxResolver.GetDefaultReferences (useFsiAuxLib)
+                let references, useDotNetFramework = tcConfigB.FxResolver.GetDefaultReferences useFsiAuxLib
 
                 // If the user requested .NET Core scripting but something went wrong and we reverted to
                 // .NET Framework scripting then we must adjust both the primaryAssembly and fxResolver
@@ -329,7 +329,7 @@ module ScriptPreprocessClosure =
                         let sources = if preSources.Length < postSources.Length then postSources.[preSources.Length..] else []
 
                         yield! resolveDependencyManagerSources filename
-                        for (m, subFile) in sources do
+                        for m, subFile in sources do
                             if IsScript subFile then
                                 for subSource in ClosureSourceOfFilename(subFile, m, tcConfigResult.inputCodePage, false) do
                                     yield! loop subSource
@@ -369,10 +369,10 @@ module ScriptPreprocessClosure =
                 | _ -> closureFiles
 
         // Get all source files.
-        let sourceFiles = [ for (ClosureFile(filename, m, _, _, _, _)) in closureFiles -> (filename, m) ]
+        let sourceFiles = [ for ClosureFile(filename, m, _, _, _, _) in closureFiles -> (filename, m) ]
 
         let sourceInputs =
-            [  for (ClosureFile(filename, _, input, parseDiagnostics, metaDiagnostics, _nowarns)) in closureFiles ->
+            [  for ClosureFile(filename, _, input, parseDiagnostics, metaDiagnostics, _nowarns) in closureFiles ->
                    ({ FileName=filename
                       SyntaxTree=input
                       ParseDiagnostics=parseDiagnostics
@@ -401,7 +401,7 @@ module ScriptPreprocessClosure =
             match GetRangeOfDiagnostic exn with
             | Some m ->
                 // Return true if the error was *not* from a #load-ed file.
-                let isArgParameterWhileNotEditing = (codeContext <> CodeContext.Editing) && (Range.equals m range0 || Range.equals m rangeStartup || Range.equals m rangeCmdArgs)
+                let isArgParameterWhileNotEditing = (codeContext <> CodeContext.Editing) && (equals m range0 || equals m rangeStartup || equals m rangeCmdArgs)
                 let isThisFileName = (0 = String.Compare(rootFilename, m.FileName, StringComparison.OrdinalIgnoreCase))
                 isArgParameterWhileNotEditing || isThisFileName
             | None -> true

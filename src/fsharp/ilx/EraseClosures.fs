@@ -238,7 +238,7 @@ let mkCallFunc cenv allocLocal numThisGenParams tl apps =
             let storers, (loaders2 : ILInstr list list) =  unwind rest
             (List.rev (List.concat storers) : ILInstr list) , List.concat loaders2
         else 
-            stripUpTo n (function (_x :: _y) -> true | _ -> false) (function (x :: y) -> (x, y) | _ -> failwith "no!") loaders
+            stripUpTo n (function _x :: _y -> true | _ -> false) (function x :: y -> (x, y) | _ -> failwith "no!") loaders
             
     let rec buildApp fst loaders apps =
         // Strip off one valid indirect call.  [fst] indicates if this is the 
@@ -249,7 +249,7 @@ let mkCallFunc cenv allocLocal numThisGenParams tl apps =
         // Type applications: REVIEW: get rid of curried tyapps - just tuple them 
         | tyargs, [], _ when not (isNil tyargs) ->
             // strip again, instantiating as we go.  we could do this while we count. 
-            let (revInstTyArgs, rest') = 
+            let revInstTyArgs, rest' = 
                 (([], apps), tyargs) ||> List.fold (fun (revArgsSoFar, cs) _  -> 
                         let actual, rest' = destTyFuncApp cs
                         let rest'' = instAppsAux varCount [ actual ] rest'
@@ -323,7 +323,7 @@ let convMethodBody thisClo = function
     | x -> x
 
 let convMethodDef thisClo (md: ILMethodDef)  =
-    let b' = convMethodBody thisClo (md.Body)
+    let b' = convMethodBody thisClo md.Body
     md.With(body=notlazy b')
 
 // -------------------------------------------------------------------- 
@@ -379,7 +379,7 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
               let fixupArg mkEnv mkArg n = 
                   let rec findMatchingArg l c = 
                       match l with 
-                      | ((m, _) :: t) -> 
+                      | (m, _) :: t -> 
                           if n = m then mkEnv c
                           else findMatchingArg t (c+1)
                       | [] -> mkArg (n - argToFreeVarMap.Length + 1)
@@ -414,7 +414,7 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
 
       match tyargsl, tmargsl, laterStruct with 
       // CASE 1 - Type abstraction 
-      | (_ :: _), [], _ ->
+      | _ :: _, [], _ ->
           let addedGenParams = tyargsl
           let nowReturnTy = (mkTyOfLambdas cenv laterStruct)
           

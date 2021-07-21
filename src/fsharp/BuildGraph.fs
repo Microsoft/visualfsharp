@@ -174,7 +174,7 @@ type NodeCode private () =
 type private AgentMessage<'T> =
     | GetValue of AsyncReplyChannel<Result<'T, Exception>> * callerCancellationToken: CancellationToken
 
-type private Agent<'T> = (MailboxProcessor<AgentMessage<'T>> * CancellationTokenSource)
+type private Agent<'T> = MailboxProcessor<AgentMessage<'T>> * CancellationTokenSource
 
 [<RequireQualifiedAccess>]
 type private GraphNodeAction<'T> =

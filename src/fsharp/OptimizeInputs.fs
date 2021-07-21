@@ -61,7 +61,7 @@ let ApplyAllOptimizations (tcConfig:TcConfig, tcGlobals, tcVal, outfile, importM
 #endif
 
     let optEnv0 = optEnv
-    ReportTime tcConfig ("Optimizations")
+    ReportTime tcConfig "Optimizations"
 
     // Only do abstract_big_targets on the first pass!  Only do it when TLR is on!
     let optSettings = tcConfig.optSettings
@@ -144,7 +144,7 @@ let ApplyAllOptimizations (tcConfig:TcConfig, tcGlobals, tcVal, outfile, importM
     let assemblyOptData = Optimizer.UnionOptimizationInfos implFileOptDatas
     let tassembly = TypedAssemblyAfterOptimization implFiles
     PrintWholeAssemblyImplementation tcGlobals tcConfig outfile "pass-end" (implFiles |> List.map (fun implFile -> implFile.ImplFile))
-    ReportTime tcConfig ("Ending Optimizations")
+    ReportTime tcConfig "Ending Optimizations"
     tassembly, assemblyOptData, optEnvFirstLoop
 
 //----------------------------------------------------------------------------
@@ -152,7 +152,7 @@ let ApplyAllOptimizations (tcConfig:TcConfig, tcGlobals, tcVal, outfile, importM
 //----------------------------------------------------------------------------
 
 let CreateIlxAssemblyGenerator (_tcConfig:TcConfig, tcImports:TcImports, tcGlobals, tcVal, generatedCcu) =
-    let ilxGenerator = new IlxGen.IlxAssemblyGenerator (tcImports.GetImportMap(), tcGlobals, tcVal, generatedCcu)
+    let ilxGenerator = new IlxAssemblyGenerator (tcImports.GetImportMap(), tcGlobals, tcVal, generatedCcu)
     let ccus = tcImports.GetCcusInDeclOrder()
     ilxGenerator.AddExternalCcus ccus
     ilxGenerator

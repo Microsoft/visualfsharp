@@ -337,13 +337,13 @@ let fslibRefEq (nlr1: NonLocalEntityRef) (PubPath path2) =
 // equality comparison techniques are needed when compiling fslib itself.
 let fslibEntityRefEq fslibCcu (eref1: EntityRef) (eref2: EntityRef) =
     match eref1, eref2 with 
-    | (ERefNonLocal nlr1, ERefLocal x2)
-    | (ERefLocal x2, ERefNonLocal nlr1) ->
+    | ERefNonLocal nlr1, ERefLocal x2
+    | ERefLocal x2, ERefNonLocal nlr1 ->
         ccuEq nlr1.Ccu fslibCcu &&
         match x2.PublicPath with 
         | Some pp2 -> fslibRefEq nlr1 pp2
         | None -> false
-    | (ERefLocal e1, ERefLocal e2) ->
+    | ERefLocal e1, ERefLocal e2 ->
         match e1.PublicPath, e2.PublicPath with 
         | Some pp1, Some pp2 -> pubPathEq pp1 pp2
         | _ -> false
@@ -357,8 +357,8 @@ let fslibEntityRefEq fslibCcu (eref1: EntityRef) (eref2: EntityRef) =
 // equality comparison techniques are needed when compiling fslib itself.
 let fslibValRefEq fslibCcu vref1 vref2 =
     match vref1, vref2 with 
-    | (VRefNonLocal nlr1, VRefLocal x2)
-    | (VRefLocal x2, VRefNonLocal nlr1) ->
+    | VRefNonLocal nlr1, VRefLocal x2
+    | VRefLocal x2, VRefNonLocal nlr1 ->
         ccuEq nlr1.Ccu fslibCcu &&
         match x2.PublicPath with 
         | Some (ValPubPath(pp2, nm2)) -> 
@@ -371,7 +371,7 @@ let fslibValRefEq fslibCcu vref1 vref2 =
         | _ -> 
             false
     // Note: I suspect this private-to-private reference comparison is not needed
-    | (VRefLocal e1, VRefLocal e2) ->
+    | VRefLocal e1, VRefLocal e2 ->
         match e1.PublicPath, e2.PublicPath with 
         | Some (ValPubPath(pp1, nm1)), Some (ValPubPath(pp2, nm2)) -> 
             pubPathEq pp1 pp2 && 

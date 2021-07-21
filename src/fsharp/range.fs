@@ -376,7 +376,7 @@ module Range =
     /// rangeOrder: not a total order, but enough to sort on ranges
     let rangeOrder = Order.orderOn (fun (r:range) -> r.FileName, r.Start) (Pair.order (String.order, posOrder))
 
-    let outputRange (os:TextWriter) (m:range) = fprintf os "%s%a-%a" m.FileName Position.outputPos m.Start Position.outputPos m.End
+    let outputRange (os:TextWriter) (m:range) = fprintf os "%s%a-%a" m.FileName outputPos m.Start outputPos m.End
 
     /// This is deliberately written in an allocation-free way, i.e. m1.Start, m1.End etc. are not called
     let unionRanges (m1:range) (m2:range) =
@@ -395,15 +395,15 @@ module Range =
 
     let rangeContainsRange (m1:range) (m2:range) =
         m1.FileIndex = m2.FileIndex &&
-        Position.posGeq m2.Start m1.Start &&
-        Position.posGeq m1.End m2.End
+        posGeq m2.Start m1.Start &&
+        posGeq m1.End m2.End
 
     let rangeContainsPos (m1:range) p =
-        Position.posGeq p m1.Start &&
-        Position.posGeq m1.End p
+        posGeq p m1.Start &&
+        posGeq m1.End p
 
     let rangeBeforePos (m1:range) p =
-        Position.posGeq p m1.End
+        posGeq p m1.End
 
     let rangeN filename line = mkRange filename (mkPos line 0) (mkPos line 0)
 
@@ -422,9 +422,9 @@ module Range =
           let endL, endC = startL+1, 0   (* Trim to the start of the next line (we do not know the end of the current line) *)
           range (r.FileIndex, startL, startC, endL, endC)
 
-    let stringOfRange (r:range) = sprintf "%s%s-%s" r.FileName (Position.stringOfPos r.Start) (Position.stringOfPos r.End)
+    let stringOfRange (r:range) = sprintf "%s%s-%s" r.FileName (stringOfPos r.Start) (stringOfPos r.End)
 
-    let toZ (m:range) = Position.toZ m.Start, Position.toZ m.End
+    let toZ (m:range) = toZ m.Start, toZ m.End
 
     let toFileZ (m:range) = m.FileName, toZ m
 

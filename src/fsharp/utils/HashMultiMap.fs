@@ -96,7 +96,7 @@ type internal HashMultiMap<'Key,'Value>(size: int, comparer: IEqualityComparer<'
                 | [h] -> 
                     firstEntries.[y] <- h; 
                     rest.Remove(y) |> ignore
-                | (h :: t) -> 
+                | h :: t -> 
                     firstEntries.[y] <- h
                     rest.[y] <- t
                 | _ -> 

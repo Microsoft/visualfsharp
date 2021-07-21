@@ -557,7 +557,7 @@ type CalledMeth<'T>
 
     member x.GetParamArrayElementType() =
         // turned as a method to avoid assert in variable inspector 
-        assert (x.UsesParamArrayConversion)
+        assert x.UsesParamArrayConversion
         x.ParamArrayCalledArgOpt.Value.CalledArgumentType |> destArrayTy x.amap.g 
 
     member x.NumAssignedProps = x.AssignedItemSetters.Length
@@ -662,7 +662,7 @@ let ExamineMethodForLambdaPropagation (x: CalledMeth<SynExpr>) =
     let unnamedInfo = x.AssignedUnnamedArgs |> List.mapSquared (ExamineArgumentForLambdaPropagation x.infoReader)
     let namedInfo = x.AssignedNamedArgs |> List.mapSquared (fun arg -> (arg.NamedArgIdOpt.Value, ExamineArgumentForLambdaPropagation x.infoReader arg))
     if unnamedInfo |> List.existsSquared (function CallerLambdaHasArgTypes _ -> true | _ -> false) || 
-       namedInfo |> List.existsSquared (function (_, CallerLambdaHasArgTypes _) -> true | _ -> false) then 
+       namedInfo |> List.existsSquared (function _, CallerLambdaHasArgTypes _ -> true | _ -> false) then 
         Some (unnamedInfo, namedInfo)
     else
         None
@@ -788,11 +788,11 @@ let BuildFSharpMethodApp g m (vref: ValRef) vexp vexprty (args: Exprs) =
         ((args, vexprty), arities) ||> List.mapFold (fun (args, fty) arity -> 
             match arity, args with 
             | (0|1), [] when typeEquiv g (domainOfFunTy g fty) g.unit_ty -> mkUnit g m, (args, rangeOfFunTy g fty)
-            | 0, (arg :: argst) -> 
+            | 0, arg :: argst -> 
                 let msg = LayoutRender.showL (Layout.sepListL (Layout.rightL (TaggedText.tagText ";")) (List.map exprL args))
                 warning(InternalError(sprintf "Unexpected zero arity, args = %s" msg, m))
                 arg, (argst, rangeOfFunTy g fty)
-            | 1, (arg :: argst) -> arg, (argst, rangeOfFunTy g fty)
+            | 1, arg :: argst -> arg, (argst, rangeOfFunTy g fty)
             | 1, [] -> error(InternalError("expected additional arguments here", m))
             | _ -> 
                 if args.Length < arity then
@@ -1289,7 +1289,7 @@ let AdjustOutCallerArgs g (calledMeth: CalledMeth<_>) mMethExpr =
     calledMeth.UnnamedCalledOutArgs |> List.map (fun calledArg -> 
         let calledArgTy = calledArg.CalledArgumentType
         let outArgTy = destByrefTy g calledArgTy
-        let outv, outArgExpr = mkMutableCompGenLocal mMethExpr PrettyNaming.outArgCompilerGeneratedName outArgTy // mutable! 
+        let outv, outArgExpr = mkMutableCompGenLocal mMethExpr outArgCompilerGeneratedName outArgTy // mutable! 
         let expr = mkDefault (mMethExpr, outArgTy)
         let callerArg = CallerArg (calledArgTy, mMethExpr, false, mkValAddr mMethExpr false (mkLocalValRef outv))
         let outArg = { NamedArgIdOpt=None;CalledArg=calledArg;CallerArg=callerArg }
@@ -1389,7 +1389,7 @@ let AdjustCallerArgs tcFieldInit eCallerMemberName (infoReader: InfoReader) ad (
 module ProvidedMethodCalls =
 
     let private convertConstExpr g amap m (constant : Tainted<obj * ProvidedType>) =
-        let (obj, objTy) = constant.PApply2(id, m)
+        let obj, objTy = constant.PApply2(id, m)
         let ty = Import.ImportProvidedType amap m objTy
         let normTy = normalizeEnumTy g ty
         obj.PUntaint((fun v ->
@@ -1461,7 +1461,7 @@ module ProvidedMethodCalls =
                         let typars = headTypeAsFSharpType.Typars(m)
                         // Drop the generic arguments that don't correspond to type arguments, i.e. are units-of-measure
                         let genericArgs = 
-                            [| for (genericArg, tp) in Seq.zip genericArgs typars do
+                            [| for genericArg, tp in Seq.zip genericArgs typars do
                                    if tp.Kind = TyparKind.Type then 
                                        yield genericArg |]
 
@@ -1500,14 +1500,14 @@ module ProvidedMethodCalls =
             let exprType = match exprType with | Some exprType -> exprType | None -> fail()
             match exprType.PUntaint(id, m) with
             | ProvidedTypeAsExpr (expr, targetTy) ->
-                let (expr, targetTy) = exprType.PApply2((fun _ -> (expr, targetTy)), m)
+                let expr, targetTy = exprType.PApply2((fun _ -> (expr, targetTy)), m)
                 let srcExpr = exprToExpr expr
                 let targetTy = Import.ImportProvidedType amap m (targetTy.PApply(id, m)) 
                 let sourceTy = Import.ImportProvidedType amap m (expr.PApply ((fun e -> e.Type), m)) 
                 let te = mkCoerceIfNeeded g targetTy sourceTy srcExpr
                 None, (te, tyOfExpr g te)
             | ProvidedTypeTestExpr (expr, targetTy) ->
-                let (expr, targetTy) = exprType.PApply2((fun _ -> (expr, targetTy)), m)
+                let expr, targetTy = exprType.PApply2((fun _ -> (expr, targetTy)), m)
                 let srcExpr = exprToExpr expr
                 let targetTy = Import.ImportProvidedType amap m (targetTy.PApply(id, m)) 
                 let te = mkCallTypeTest g m targetTy srcExpr
@@ -1642,7 +1642,7 @@ module ProvidedMethodCalls =
 
 
         and ctorCallToExpr (ne: Tainted<_>) =    
-            let (ctor, args) = ne.PApply2(id, m)
+            let ctor, args = ne.PApply2(id, m)
             let targetMethInfo = ProvidedMeth(amap, ctor.PApply((fun ne -> upcast ne), m), None, m)
             let objArgs = [] 
             let arguments = [ for ea in args.PApplyArray(id, "GetInvokerExpression", m) -> exprToExpr ea ]
@@ -1663,7 +1663,7 @@ module ProvidedMethodCalls =
             varConv.Remove vRaw |> ignore
 
         and methodCallToExpr top _origExpr (mce: Tainted<_>) =    
-            let (objOpt, meth, args) = mce.PApply3(id, m)
+            let objOpt, meth, args = mce.PApply3(id, m)
             let targetMethInfo = ProvidedMeth(amap, meth.PApply((fun mce -> upcast mce), m), None, m)
             let objArgs = 
                 match objOpt.PApplyOption(id, m) with
@@ -1691,7 +1691,7 @@ module ProvidedMethodCalls =
             match varConv.TryGetValue vRaw with
             | true, v -> v
             | _ ->
-                let typeProviderDesignation = ExtensionTyping.DisplayNameOfTypeProvider (pe.TypeProvider, m)
+                let typeProviderDesignation = DisplayNameOfTypeProvider (pe.TypeProvider, m)
                 error(Error(FSComp.SR.etIncorrectParameterExpression(typeProviderDesignation, vRaw.Name), m))
                 
         and exprToExpr expr =
@@ -1726,7 +1726,7 @@ module ProvidedMethodCalls =
             | [] -> None, paramVars
             | _ -> failwith "multiple objArgs?"
             
-        let ea = mi.PApplyWithProvider((fun (methodInfo, provider) -> ExtensionTyping.GetInvokerExpression(provider, methodInfo, [| for p in paramVars -> p.PUntaintNoFailure id |])), m)
+        let ea = mi.PApplyWithProvider((fun (methodInfo, provider) -> GetInvokerExpression(provider, methodInfo, [| for p in paramVars -> p.PUntaintNoFailure id |])), m)
 
         convertProvidedExpressionToExprAndWitness tcVal (thisArg, allArgs, paramVars, g, amap, mut, isProp, isSuperInit, m, ea)
 

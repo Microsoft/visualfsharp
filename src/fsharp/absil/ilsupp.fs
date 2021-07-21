@@ -27,22 +27,22 @@ let inline ignore _x = ()
 // Native Resource linking/unlinking
 type IStream = System.Runtime.InteropServices.ComTypes.IStream
 
-let check _action (hresult) =
+let check _action hresult =
   if uint32 hresult >= 0x80000000ul then
-    System.Runtime.InteropServices.Marshal.ThrowExceptionForHR hresult
+    Marshal.ThrowExceptionForHR hresult
   //printf "action = %s, hresult = 0x%nx \n" action hresult
 
 let MAX_PATH = 260
 
 let E_FAIL = 0x80004005
 
-let bytesToWord ((b0: byte), (b1: byte)) =
+let bytesToWord (b0: byte, b1: byte) =
     int16 b0 ||| (int16 b1 <<< 8)
 
-let bytesToDWord ((b0: byte), (b1: byte), (b2: byte), (b3: byte)) =
+let bytesToDWord (b0: byte, b1: byte, b2: byte, b3: byte) =
     int b0 ||| (int b1 <<< 8) ||| (int b2 <<< 16) ||| (int b3 <<< 24)
 
-let bytesToQWord ((b0: byte), (b1: byte), (b2: byte), (b3: byte), (b4: byte), (b5: byte), (b6: byte), (b7: byte)) =
+let bytesToQWord (b0: byte, b1: byte, b2: byte, b3: byte, b4: byte, b5: byte, b6: byte, b7: byte) =
     int64 b0 ||| (int64 b1 <<< 8) ||| (int64 b2 <<< 16) ||| (int64 b3 <<< 24) ||| (int64 b4 <<< 32) ||| (int64 b5 <<< 40) ||| (int64 b6 <<< 48) ||| (int64 b7 <<< 56)
 
 let dwToBytes n = [| byte (n &&& 0xff) ; byte ((n >>> 8) &&& 0xff) ; byte ((n >>> 16) &&& 0xff) ; byte ((n >>> 24) &&& 0xff) |], 4
@@ -505,7 +505,7 @@ type ResFormatNode(tid: int32, nid: int32, lid: int32, dataOffset: int32, pbLink
         else
             resHdr.NameID <- (0xffff ||| ((nid &&& 0xffff) <<< 16))
 
-        resHdr.LangID <- (int16)lid
+        resHdr.LangID <- int16 lid
         dataEntry <- bytesToIRDataE pbLinkedResource dataOffset
         resHdr.DataSize <- dataEntry.Size
 
@@ -656,7 +656,7 @@ let unlinkResource (ulLinkedResourceBaseRVA: int32) (pbLinkedResource: byte[]) =
 
                         if pirdeLang.DataIsDirectory then
                             // Resource hierarchy exceeds three levels
-                            System.Runtime.InteropServices.Marshal.ThrowExceptionForHR(E_FAIL)
+                            Marshal.ThrowExceptionForHR(E_FAIL)
                         else
                             if (not skipResource) then
                                 let rfn = ResFormatNode(dwTypeID, dwNameID, dwLangID, pirdeLang.OffsetToData, pbLinkedResource)

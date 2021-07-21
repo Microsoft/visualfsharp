@@ -43,7 +43,7 @@ let (=>) (source: string) (expectedRanges: (Range * Range) list) =
     let ast = parseSourceCode(fileName, source)
     try
         let actual =
-            Structure.getOutliningRanges lines ast
+            getOutliningRanges lines ast
             |> Seq.filter (fun sr -> sr.Range.StartLine <> sr.Range.EndLine)
             |> Seq.map (fun sr -> getRange sr.Range, getRange sr.CollapseRange)
             |> Seq.sort

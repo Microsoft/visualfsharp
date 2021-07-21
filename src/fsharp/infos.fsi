@@ -98,11 +98,11 @@ val ImportReturnTypeFromMetadata: amap:ImportMap -> m:range -> ilty:ILType -> ca
 ///
 /// Note: this now looks identical to constraint instantiation.
 
-val CopyTyparConstraints: m:range -> tprefInst:TypedTreeOps.TyparInst -> tporig:Typar -> TyparConstraint list
+val CopyTyparConstraints: m:range -> tprefInst:TyparInst -> tporig:Typar -> TyparConstraint list
 
 /// The constraints for each typar copied from another typar can only be fixed up once
 /// we have generated all the new constraints, e.g. f<A :> List<B>, B :> List<A>> ...
-val FixupNewTypars: m:range -> formalEnclosingTypars:Typars -> tinst:TType list -> tpsorig:Typars -> tps:Typars -> TypedTreeOps.TyparInst * TTypes
+val FixupNewTypars: m:range -> formalEnclosingTypars:Typars -> tinst:TType list -> tpsorig:Typars -> tps:Typars -> TyparInst * TTypes
 
 type ValRef with
     /// Indicates if an F#-declared function or member value is a CLIEvent property compiled as a .NET event
@@ -196,9 +196,9 @@ type ParamNameAndType =
 
     static member FromMember: isCSharpExtMem:bool -> g:TcGlobals -> vref:ValRef -> ParamNameAndType list list
 
-    static member Instantiate: inst:TypedTreeOps.TyparInst -> p:ParamNameAndType -> ParamNameAndType
+    static member Instantiate: inst:TyparInst -> p:ParamNameAndType -> ParamNameAndType
 
-    static member InstantiateCurried: inst:TypedTreeOps.TyparInst -> paramTypes:ParamNameAndType list list -> ParamNameAndType list list
+    static member InstantiateCurried: inst:TyparInst -> paramTypes:ParamNameAndType list list -> ParamNameAndType list list
   
 /// Full information about a parameter returned for use by the type checker and language service.
 [<NoComparison; NoEquality>]
@@ -219,7 +219,7 @@ type ILTypeInfo =
     | ILTypeInfo of TcGlobals * TType * ILTypeRef * ILTypeDef
     static member FromType: g:TcGlobals -> ty:TType -> ILTypeInfo
 
-    member Instantiate: inst:TypedTreeOps.TyparInst -> ILTypeInfo
+    member Instantiate: inst:TyparInst -> ILTypeInfo
 
     member ILScopeRef: ILScopeRef
 
@@ -368,7 +368,7 @@ type MethInfo =
 
 #if !NO_EXTENSIONTYPING
     /// Describes a use of a method backed by provided metadata
-    | ProvidedMeth of amap: Import.ImportMap * methodBase: Tainted<ProvidedMethodBase> * extensionMethodPriority: ExtensionMethodPriority option * m: range
+    | ProvidedMeth of amap: ImportMap * methodBase: Tainted<ProvidedMethodBase> * extensionMethodPriority: ExtensionMethodPriority option * m: range
 #endif
 
     /// Get the enclosing type of the method info, using a nominal type for tuple types
@@ -412,7 +412,7 @@ type MethInfo =
     /// Get the formal generic method parameters for the method as a list of variable types.
     member FormalMethodInst: TypeInst
 
-    member FormalMethodTyparInst: TypedTreeOps.TyparInst
+    member FormalMethodTyparInst: TyparInst
 
     /// Get the formal generic method parameters for the method as a list of type variables.
     ///
@@ -562,7 +562,7 @@ type MethInfo =
     member HasParamArrayArg: amap:ImportMap * m:range * minst:TType list -> bool
 
     /// Apply a type instantiation to a method info, i.e. apply the instantiation to the enclosing type.
-    member Instantiate: amap:ImportMap * m:range * inst:TypedTreeOps.TyparInst -> MethInfo
+    member Instantiate: amap:ImportMap * m:range * inst:TyparInst -> MethInfo
 
     /// Indicates if this method is an extension member that is read-only.
     /// An extension member is considered read-only if the first argument is a read-only byref (inref) type.
@@ -699,7 +699,7 @@ type UnionCaseInfo =
     member UnionCaseRef: UnionCaseRef
 
     /// Get the instantiation of the type parameters of the declaring type of the union case
-    member GetTyparInst: m:range -> TypedTreeOps.TyparInst
+    member GetTyparInst: m:range -> TyparInst
 
 /// Describes an F# use of a property backed by Abstract IL metadata
 [<NoComparison; NoEquality>]
@@ -933,7 +933,7 @@ type EventInfo =
 
 #if !NO_EXTENSIONTYPING
     /// An F# use of an event backed by provided metadata
-    | ProvidedEvent of amap: Import.ImportMap * providedEvent: Tainted<ProvidedEventInfo> * range: range
+    | ProvidedEvent of amap: ImportMap * providedEvent: Tainted<ProvidedEventInfo> * range: range
 #endif
 
     /// Get the enclosing type of the method info, using a nominal type for tuple types
@@ -1019,20 +1019,20 @@ type CompiledSig = CompiledSig of argTys: TType list list * returnTy: TType opti
 val CompiledSigOfMeth: g:TcGlobals -> amap:ImportMap -> m:range -> minfo:MethInfo -> CompiledSig
 
 /// Inref and outref parameter types will be treated as a byref type for equivalency.
-val MethInfosEquivByPartialSig: erasureFlag:TypedTreeOps.Erasure -> ignoreFinal:bool -> g:TcGlobals -> amap:ImportMap -> m:range -> minfo:MethInfo -> minfo2:MethInfo -> bool
+val MethInfosEquivByPartialSig: erasureFlag:Erasure -> ignoreFinal:bool -> g:TcGlobals -> amap:ImportMap -> m:range -> minfo:MethInfo -> minfo2:MethInfo -> bool
 
 /// Used to hide/filter members from super classes based on signature
 /// Inref and outref parameter types will be treated as a byref type for equivalency.
-val MethInfosEquivByNameAndPartialSig: erasureFlag:TypedTreeOps.Erasure -> ignoreFinal:bool -> g:TcGlobals -> amap:ImportMap -> m:range -> minfo:MethInfo -> minfo2:MethInfo -> bool
+val MethInfosEquivByNameAndPartialSig: erasureFlag:Erasure -> ignoreFinal:bool -> g:TcGlobals -> amap:ImportMap -> m:range -> minfo:MethInfo -> minfo2:MethInfo -> bool
 
 /// Used to hide/filter members from super classes based on signature
-val PropInfosEquivByNameAndPartialSig: erasureFlag:TypedTreeOps.Erasure -> g:TcGlobals -> amap:ImportMap -> m:range -> pinfo:PropInfo -> pinfo2:PropInfo -> bool
+val PropInfosEquivByNameAndPartialSig: erasureFlag:Erasure -> g:TcGlobals -> amap:ImportMap -> m:range -> pinfo:PropInfo -> pinfo2:PropInfo -> bool
 
 /// Used to hide/filter members from base classes based on signature
-val MethInfosEquivByNameAndSig: erasureFlag:TypedTreeOps.Erasure -> ignoreFinal:bool -> g:TcGlobals -> amap:ImportMap -> m:range -> minfo:MethInfo -> minfo2:MethInfo -> bool
+val MethInfosEquivByNameAndSig: erasureFlag:Erasure -> ignoreFinal:bool -> g:TcGlobals -> amap:ImportMap -> m:range -> minfo:MethInfo -> minfo2:MethInfo -> bool
 
 /// Used to hide/filter members from super classes based on signature
-val PropInfosEquivByNameAndSig: erasureFlag:TypedTreeOps.Erasure -> g:TcGlobals -> amap:ImportMap -> m:range -> pinfo:PropInfo -> pinfo2:PropInfo -> bool
+val PropInfosEquivByNameAndSig: erasureFlag:Erasure -> g:TcGlobals -> amap:ImportMap -> m:range -> pinfo:PropInfo -> pinfo2:PropInfo -> bool
 
 val SettersOfPropInfos: pinfos:PropInfo list -> (MethInfo * PropInfo option) list
 

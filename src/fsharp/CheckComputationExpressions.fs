@@ -101,7 +101,7 @@ let YieldFree (cenv: cenv) expr =
             | SynExpr.TryWith (e1, _, clauses, _, _, _, _) ->
                 YieldFree e1 && clauses |> List.forall (fun (SynMatchClause(_, _, e, _, _)) -> YieldFree e)
 
-            | (SynExpr.Match (_, _, clauses, _) | SynExpr.MatchBang (_, _, clauses, _)) ->
+            | SynExpr.Match (_, _, clauses, _) | SynExpr.MatchBang (_, _, clauses, _) ->
                 clauses |> List.forall (fun (SynMatchClause(_, _, e, _, _)) -> YieldFree e)
 
             | SynExpr.For (_, _, _, _, _, body, _)
@@ -132,7 +132,7 @@ let YieldFree (cenv: cenv) expr =
             | SynExpr.TryWith (e1, _, clauses, _, _, _, _) ->
                 YieldFree e1 && clauses |> List.forall (fun (SynMatchClause(_, _, e, _, _)) -> YieldFree e)
 
-            | (SynExpr.Match (_, _, clauses, _) | SynExpr.MatchBang (_, _, clauses, _)) ->
+            | SynExpr.Match (_, _, clauses, _) | SynExpr.MatchBang (_, _, clauses, _) ->
                 clauses |> List.forall (fun (SynMatchClause(_, _, e, _, _)) -> YieldFree e)
 
             | SynExpr.For (_, _, _, _, _, body, _)
@@ -267,7 +267,7 @@ let TcComputationExpression cenv env overallTy tpenv (mWhole, interpExpr: Expr, 
                 let nameSearch = 
                     TryBindMethInfoAttribute cenv.g mBuilderVal cenv.g.attrib_CustomOperationAttribute methInfo 
                         IgnoreAttribute // We do not respect this attribute for IL methods
-                        (function (Attrib(_, _, [ AttribStringArg msg ], _, _, _, _)) -> Some msg | _ -> None)
+                        (function Attrib(_, _, [ AttribStringArg msg ], _, _, _, _) -> Some msg | _ -> None)
                         IgnoreAttribute // We do not respect this attribute for provided methods
 
                 match nameSearch with
@@ -276,13 +276,13 @@ let TcComputationExpression cenv env overallTy tpenv (mWhole, interpExpr: Expr, 
                     let joinConditionWord =
                         TryBindMethInfoAttribute cenv.g mBuilderVal cenv.g.attrib_CustomOperationAttribute methInfo 
                             IgnoreAttribute // We do not respect this attribute for IL methods
-                            (function (Attrib(_, _, _, ExtractAttribNamedArg "JoinConditionWord" (AttribStringArg s), _, _, _)) -> Some s | _ -> None)
+                            (function Attrib(_, _, _, ExtractAttribNamedArg "JoinConditionWord" (AttribStringArg s), _, _, _) -> Some s | _ -> None)
                             IgnoreAttribute // We do not respect this attribute for provided methods
 
                     let flagSearch (propName: string) = 
                         TryBindMethInfoAttribute cenv.g mBuilderVal cenv.g.attrib_CustomOperationAttribute methInfo 
                             IgnoreAttribute // We do not respect this attribute for IL methods
-                            (function (Attrib(_, _, _, ExtractAttribNamedArg propName (AttribBoolArg b), _, _, _)) -> Some b | _ -> None)
+                            (function Attrib(_, _, _, ExtractAttribNamedArg propName (AttribBoolArg b), _, _, _) -> Some b | _ -> None)
                             IgnoreAttribute // We do not respect this attribute for provided methods
 
                     let maintainsVarSpaceUsingBind = defaultArg (flagSearch "MaintainsVariableSpaceUsingBind") false
@@ -328,7 +328,7 @@ let TcComputationExpression cenv env overallTy tpenv (mWhole, interpExpr: Expr, 
         match customOperationMethodsIndexedByKeyword.TryGetValue nm.idText with 
         | true, opDatas when (opDatas.Length = 1 || (opDatas.Length > 0 && cenv.g.langVersion.SupportsFeature LanguageFeature.OverloadsForCustomOperations)) -> 
             for opData in opDatas do
-                let (opName, maintainsVarSpaceUsingBind, maintainsVarSpace, _allowInto, isLikeZip, isLikeJoin, isLikeGroupJoin, _joinConditionWord, methInfo) = opData
+                let opName, maintainsVarSpaceUsingBind, maintainsVarSpace, _allowInto, isLikeZip, isLikeJoin, isLikeGroupJoin, _joinConditionWord, methInfo = opData
                 if (maintainsVarSpaceUsingBind && maintainsVarSpace) || (isLikeZip && isLikeJoin) || (isLikeZip && isLikeGroupJoin) || (isLikeJoin && isLikeGroupJoin) then 
                      errorR(Error(FSComp.SR.tcCustomOperationInvalid opName, nm.idRange))
                 if not (cenv.g.langVersion.SupportsFeature LanguageFeature.OverloadsForCustomOperations) then
@@ -336,7 +336,7 @@ let TcComputationExpression cenv env overallTy tpenv (mWhole, interpExpr: Expr, 
                     | true, [_] -> ()
                     | _ -> errorR(Error(FSComp.SR.tcCustomOperationMayNotBeOverloaded nm.idText, nm.idRange))
             Some opDatas
-        | true, (opData :: _) -> errorR(Error(FSComp.SR.tcCustomOperationMayNotBeOverloaded nm.idText, nm.idRange)); Some [opData]
+        | true, opData :: _ -> errorR(Error(FSComp.SR.tcCustomOperationMayNotBeOverloaded nm.idText, nm.idRange)); Some [opData]
         | _ -> None
 
     /// Decide if the identifier represents a use of a custom query operator
@@ -347,7 +347,7 @@ let TcComputationExpression cenv env overallTy tpenv (mWhole, interpExpr: Expr, 
     let customOperationCheckValidity m f opDatas = 
         let vs = opDatas |> List.map f
         let v0 = vs.[0]
-        let (opName, _maintainsVarSpaceUsingBind, _maintainsVarSpace, _allowInto, _isLikeZip, _isLikeJoin, _isLikeGroupJoin, _joinConditionWord, _methInfo) = opDatas.[0]
+        let opName, _maintainsVarSpaceUsingBind, _maintainsVarSpace, _allowInto, _isLikeZip, _isLikeJoin, _isLikeGroupJoin, _joinConditionWord, _methInfo = opDatas.[0]
         if not (List.allEqual vs) then 
             errorR(Error(FSComp.SR.tcCustomOperationInvalid opName, m))
         v0
@@ -483,12 +483,12 @@ let TcComputationExpression cenv env overallTy tpenv (mWhole, interpExpr: Expr, 
                     | None -> false
                     | Some argInfos -> 
                         i < argInfos.Length && 
-                        let (_, argInfo) = List.item i argInfos
+                        let _, argInfo = List.item i argInfos
                         HasFSharpAttribute cenv.g cenv.g.attrib_ProjectionParameterAttribute argInfo.Attribs)
             if List.allEqual vs then vs.[0]
             else 
                 let opDatas = (tryGetDataForCustomOperation nm).Value
-                let (opName, _, _, _, _, _, _, _j, _) = opDatas.[0]
+                let opName, _, _, _, _, _, _, _j, _ = opDatas.[0]
                 errorR(Error(FSComp.SR.tcCustomOperationInvalid opName, nm.idRange))
                 false
 
@@ -576,7 +576,7 @@ let TcComputationExpression cenv env overallTy tpenv (mWhole, interpExpr: Expr, 
     let (|JoinExpr|_|) (e: SynExpr) = 
         match e with 
         | InExpr (JoinOp(nm, innerSourcePat, _, alreadyGivenError), onExpr, mJoinCore) -> 
-            let (innerSource, keySelectors) = MatchOnExprOrRecover alreadyGivenError nm onExpr
+            let innerSource, keySelectors = MatchOnExprOrRecover alreadyGivenError nm onExpr
             Some(nm, innerSourcePat, innerSource, keySelectors, mJoinCore)
         | JoinOp (nm, innerSourcePat, mJoinCore, alreadyGivenError) ->
             if alreadyGivenError then 
@@ -726,7 +726,7 @@ let TcComputationExpression cenv env overallTy tpenv (mWhole, interpExpr: Expr, 
             let estimatedRangeOfIntendedLeftAndRightArguments = unionRanges (List.last args).Range arg2.Range
             errorR(Error(FSComp.SR.tcUnrecognizedQueryBinaryOperator(), estimatedRangeOfIntendedLeftAndRightArguments))
             true
-        | SynExpr.Tuple (false, (StripApps(SingleIdent nm2, args) :: _), _, m) when 
+        | SynExpr.Tuple (false, StripApps(SingleIdent nm2, args) :: _, _, m) when 
                   (match tryExpectedArgCountForCustomOperator nm2 with Some n -> n > 0 | _ -> false) &&
                   not (List.isEmpty args) -> 
             let estimatedRangeOfIntendedLeftAndRightArguments = unionRanges (List.last args).Range m.EndRange
@@ -818,7 +818,7 @@ let TcComputationExpression cenv env overallTy tpenv (mWhole, interpExpr: Expr, 
             match tryGetDataForCustomOperation nm with 
             | None -> error(Error(FSComp.SR.tcMissingCustomOperation(nm.idText), nm.idRange))
             | Some opDatas -> 
-            let (opName, _, _, _, _, _, _, _, methInfo) = opDatas.[0]
+            let opName, _, _, _, _, _, _, _, methInfo = opDatas.[0]
 
             // Record the resolution of the custom operation for posterity
             let item = Item.CustomOperation (opName, (fun () -> customOpUsageText nm), Some methInfo)
@@ -1178,8 +1178,8 @@ let TcComputationExpression cenv env overallTy tpenv (mWhole, interpExpr: Expr, 
             if cenv.g.langVersion.SupportsFeature LanguageFeature.AndBang then
                 if isQuery then error(Error(FSComp.SR.tcBindMayNotBeUsedInQueries(), letBindRange))
                 let bindRange = match letSpBind with DebugPointAtBinding.Yes m -> m | _ -> letRhsExpr.Range
-                let sources = (letRhsExpr :: [for (_, _, _, _, andExpr, _) in andBangBindings -> andExpr ]) |> List.map (mkSourceExprConditional isFromSource)
-                let pats = letPat :: [for (_, _, _, andPat, _, _) in andBangBindings -> andPat ]
+                let sources = (letRhsExpr :: [for _, _, _, _, andExpr, _ in andBangBindings -> andExpr ]) |> List.map (mkSourceExprConditional isFromSource)
+                let pats = letPat :: [for _, _, _, andPat, _, _ in andBangBindings -> andPat ]
                 let sourcesRange = sources |> List.map (fun e -> e.Range) |> List.reduce unionRanges
 
                 let numSources = sources.Length
@@ -1353,7 +1353,7 @@ let TcComputationExpression cenv env overallTy tpenv (mWhole, interpExpr: Expr, 
                            opExpr, mClause, optionalIntoPat),
                        optionalCont) ->
 
-                    let (opName, _, _, _, _, _, _, _, methInfo) = opDatas.[0]
+                    let opName, _, _, _, _, _, _, _, methInfo = opDatas.[0]
                     let isLikeZip = customOperationIsLikeZip nm
                     let isLikeJoin = customOperationIsLikeJoin nm
                     let isLikeGroupJoin = customOperationIsLikeZip nm

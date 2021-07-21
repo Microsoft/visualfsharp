@@ -94,7 +94,7 @@ module FSharpDependencyManager =
                     match value with
                     | Some v when v.ToLowerInvariant() = "true" -> setBinLogPath (Some None)      // auto-generated logging location
                     | Some v when v.ToLowerInvariant() = "false" -> setBinLogPath None          // no logging
-                    | Some path -> setBinLogPath (Some (Some (path))) // explicit logging location
+                    | Some path -> setBinLogPath (Some (Some path)) // explicit logging location
                     | None ->
                         // parser shouldn't get here because unkeyed values follow a different path, but for the sake of completeness and keeping the compiler happy,
                         // this is fine

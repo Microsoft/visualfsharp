@@ -50,7 +50,7 @@ type NativeDllResolveHandlerCoreClr (nativeProbingRoots: NativeResolutionProbe) 
 
         [|
             yield name                                                                              // Bare name
-            if not (isRooted) then
+            if not isRooted then
                 for s in suffix do
                     if useSuffix s then                                                             // Suffix without prefix
                         yield (sprintf "%s%s" name s)
@@ -95,7 +95,7 @@ type NativeDllResolveHandlerCoreClr (nativeProbingRoots: NativeResolutionProbe) 
     let assemblyLoadContextType: Type = Type.GetType("System.Runtime.Loader.AssemblyLoadContext, System.Runtime.Loader", false)
     let eventInfo, handler, defaultAssemblyLoadContext =
         assemblyLoadContextType.GetEvent("ResolvingUnmanagedDll"),
-        Func<Assembly, string, IntPtr> (resolveUnmanagedDll),
+        Func<Assembly, string, IntPtr> resolveUnmanagedDll,
         assemblyLoadContextType.GetProperty("Default", BindingFlags.Static ||| BindingFlags.Public).GetValue(null, null)
 
     do eventInfo.AddEventHandler(defaultAssemblyLoadContext, handler)
@@ -112,7 +112,7 @@ type NativeDllResolveHandler (nativeProbingRoots: NativeResolutionProbe) =
             None
 
     let appendPathSeparator (p: string) =
-        let separator = string System.IO.Path.PathSeparator
+        let separator = string Path.PathSeparator
         if not(p.EndsWith(separator, StringComparison.OrdinalIgnoreCase)) then
             p + separator
         else

@@ -25,11 +25,11 @@ module internal Project1 =
     let base2 = Path.GetTempFileName()
     let dllName = Path.ChangeExtension(base2, ".dll")
     let projFileName = Path.ChangeExtension(base2, ".fsproj")
-    let fileSources = [ for (i,f) in fileNamesI -> (f, "module M" + string i) ]
-    for (f,text) in fileSources do FileSystem.OpenFileForWriteShim(f).Write(text)
-    let fileSources2 = [ for (i,f) in fileSources -> SourceText.ofString f ]
+    let fileSources = [ for i,f in fileNamesI -> (f, "module M" + string i) ]
+    for f,text in fileSources do FileSystem.OpenFileForWriteShim(f).Write(text)
+    let fileSources2 = [ for i,f in fileSources -> SourceText.ofString f ]
 
-    let fileNames = [ for (_,f) in fileNamesI -> f ]
+    let fileNames = [ for _,f in fileNamesI -> f ]
     let args = mkProjectCommandLineArgs (dllName, fileNames)
     let options = checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
     let parsingOptions, _ = checker.GetParsingOptionsFromCommandLineArgs(List.ofArray args)

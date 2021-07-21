@@ -145,7 +145,7 @@ let private IsILTypeInfoAccessible amap m ad (tcrefOfViewedItem : TyconRef) =
                         let parentTycon = Import.ImportILTypeRef amap m parentILTyRef
                         check (Some (parentTycon, [x])) xs
                     )
-            | (Some (parentTycon, parentPath)) -> 
+            | Some (parentTycon, parentPath) -> 
                 match path with
                 | [] -> true // end of path is reached - success
                 | x :: xs -> 

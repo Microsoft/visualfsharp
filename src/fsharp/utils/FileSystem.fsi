@@ -133,10 +133,10 @@ module internal FileSystemUtils =
 /// Type which we use to load assemblies.
 type public IAssemblyLoader =
     /// Used to load a dependency for F# Interactive and in an unused corner-case of type provider loading
-    abstract member AssemblyLoad: assemblyName:System.Reflection.AssemblyName -> System.Reflection.Assembly
+    abstract member AssemblyLoad: assemblyName:AssemblyName -> Assembly
 
     /// Used to load type providers and located assemblies in F# Interactive
-    abstract member AssemblyLoadFrom: fileName:string -> System.Reflection.Assembly
+    abstract member AssemblyLoadFrom: fileName:string -> Assembly
 
 /// Default implementation for IAssemblyLoader
 type DefaultAssemblyLoader =

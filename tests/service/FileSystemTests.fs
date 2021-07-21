@@ -55,9 +55,9 @@ let UseMyFileSystem() =
 [<Ignore("SKIPPED: need to check if these tests can be enabled for .NET Core testing of FSharp.Compiler.Service")>]
 #endif
 let ``FileSystem compilation test``() =
-  if System.Environment.OSVersion.Platform = System.PlatformID.Win32NT then // file references only valid on Windows
+  if Environment.OSVersion.Platform = PlatformID.Win32NT then // file references only valid on Windows
     use myFileSystem =  UseMyFileSystem()
-    let programFilesx86Folder = System.Environment.GetEnvironmentVariable("PROGRAMFILES(X86)")
+    let programFilesx86Folder = Environment.GetEnvironmentVariable("PROGRAMFILES(X86)")
 
     let projectOptions =
         let allFlags =
@@ -81,7 +81,7 @@ let ``FileSystem compilation test``() =
           ReferencedProjects = [| |];
           IsIncompleteTypeCheckEnvironment = false
           UseScriptResolutionRules = true
-          LoadTime = System.DateTime.Now // Not 'now', we don't want to force reloading
+          LoadTime = DateTime.Now // Not 'now', we don't want to force reloading
           UnresolvedReferences = None
           OriginalLoadReferences = []
           Stamp = None }

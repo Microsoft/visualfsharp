@@ -111,7 +111,7 @@ let ``Test project1 whole project errors`` () =
 let ``Test project1 and make sure TcImports gets cleaned up`` () =
 
     let test () =
-        let (_, checkFileAnswer) = checker.ParseAndCheckFileInProject(Project1.fileName1, 0, Project1.fileSource1, Project1.options) |> Async.RunImmediate
+        let _, checkFileAnswer = checker.ParseAndCheckFileInProject(Project1.fileName1, 0, Project1.fileSource1, Project1.options) |> Async.RunImmediate
         match checkFileAnswer with
         | FSharpCheckFileAnswer.Aborted -> failwith "should not be aborted"
         | FSharpCheckFileAnswer.Succeeded checkFileResults ->
@@ -123,7 +123,7 @@ let ``Test project1 and make sure TcImports gets cleaned up`` () =
 
     // Here we are only keeping a handle to weakTcImports and nothing else
     let weakTcImports = test ()
-    checker.InvalidateConfiguration (Project1.options)
+    checker.InvalidateConfiguration Project1.options
     checker.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()
     GC.Collect(2, GCCollectionMode.Forced, blocking = true)
     Assert.False weakTcImports.IsAlive
@@ -2600,7 +2600,7 @@ let ``Test Project16 sig symbols are equal to impl symbols`` () =
     // Test that all 'definition' symbols in the signature (or implementation) have a matching symbol in the
     // implementation (or signature).
     let testFind (tag1,symbols1) (tag2,symbols2) =
-        for (symUse1: FSharpSymbolUse) in symbols1 do
+        for symUse1: FSharpSymbolUse in symbols1 do
 
           if symUse1.IsFromDefinition &&
              (match symUse1.Symbol with
@@ -5191,11 +5191,11 @@ module internal ProjectBig =
     let base2 = Path.GetTempFileName()
     let dllName = Path.ChangeExtension(base2, ".dll")
     let projFileName = Path.ChangeExtension(base2, ".fsproj")
-    let fileSources = [ for (i,f) in fileNamesI -> (f, "module M" + string i) ]
-    for (f,text) in fileSources do FileSystem.OpenFileForWriteShim(f).Write(text)
-    let fileSources2 = [ for (i,f) in fileSources -> SourceText.ofString f ]
+    let fileSources = [ for i,f in fileNamesI -> (f, "module M" + string i) ]
+    for f,text in fileSources do FileSystem.OpenFileForWriteShim(f).Write(text)
+    let fileSources2 = [ for i,f in fileSources -> SourceText.ofString f ]
 
-    let fileNames = [ for (_,f) in fileNamesI -> f ]
+    let fileNames = [ for _,f in fileNamesI -> f ]
     let args = mkProjectCommandLineArgs (dllName, fileNames)
     let options = checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
     let parsingOptions, _ = checker.GetParsingOptionsFromCommandLineArgs(List.ofArray args)
@@ -5301,7 +5301,7 @@ let ``Test line directives in foreground analysis`` () = // see https://github.c
     let checkResults1 =
         checker.ParseAndCheckFileInProject(ProjectLineDirectives.fileName1, 0, ProjectLineDirectives.fileSource1, ProjectLineDirectives.options)
         |> Async.RunImmediate
-        |> function (_,FSharpCheckFileAnswer.Succeeded x) ->  x | _ -> failwith "unexpected aborted"
+        |> function _,FSharpCheckFileAnswer.Succeeded x ->  x | _ -> failwith "unexpected aborted"
 
     for e in checkResults1.Diagnostics do
         printfn "ProjectLineDirectives checkResults1 error file: <<<%s>>>" e.Range.FileName

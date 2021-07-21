@@ -596,7 +596,7 @@ type SynExpr =
     | Record of
         baseInfo:(SynType * SynExpr * range * BlockSeparator option * range) option *
         copyInfo:(SynExpr * BlockSeparator) option *
-        recordFields:(RecordFieldName * (SynExpr option) * BlockSeparator option) list *
+        recordFields:(RecordFieldName * SynExpr option * BlockSeparator option) list *
         range: range
 
     /// F# syntax: new C(...)

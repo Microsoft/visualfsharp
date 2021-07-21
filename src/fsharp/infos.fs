@@ -182,7 +182,7 @@ type AllowMultiIntfInstantiations = Yes | No
 /// Traverse the type hierarchy, e.g. f D (f C (f System.Object acc)).
 /// Visit base types and interfaces first.
 let private FoldHierarchyOfTypeAux followInterfaces allowMultiIntfInst skipUnref visitor g amap m ty acc =
-    let rec loop ndeep ty ((visitedTycon, visited: TyconRefMultiMap<_>, acc) as state) =
+    let rec loop ndeep ty (visitedTycon, visited: TyconRefMultiMap<_>, acc as state) =
 
         let seenThisTycon = 
             match tryTcrefOfAppTy g ty with
@@ -525,7 +525,7 @@ type ExtensionMethodPriority = uint64
 
 /// The caller-side value for the optional arg, if any
 type OptionalArgCallerSideValue =
-    | Constant of IL.ILFieldInit
+    | Constant of ILFieldInit
     | DefaultValue
     | MissingValue
     | WrapperForIDispatch
@@ -577,7 +577,7 @@ type OptionalArgInfo =
     static member ValueOfDefaultParameterValueAttrib (Attrib (_, _, exprs, _, _, _, _)) =
         let (AttribExpr (_, defaultValueExpr)) = List.head exprs
         match defaultValueExpr with
-        | Expr.Const (_, _, _) -> Some defaultValueExpr
+        | Expr.Const _ -> Some defaultValueExpr
         | _ -> None
     static member FieldInitForDefaultParameterValueAttrib attrib =
         match OptionalArgInfo.ValueOfDefaultParameterValueAttrib attrib with
@@ -975,7 +975,7 @@ type MethInfo =
     /// Get the extension method priority of the method. If it is not an extension method
     /// then use the highest possible value since non-extension methods always take priority
     /// over extension members.
-    member x.ExtensionMemberPriority = defaultArg x.ExtensionMemberPriorityOption System.UInt64.MaxValue
+    member x.ExtensionMemberPriority = defaultArg x.ExtensionMemberPriorityOption UInt64.MaxValue
 
     /// Get the method name in DebuggerDisplayForm
     member x.DebuggerDisplayName =
@@ -1053,7 +1053,7 @@ type MethInfo =
     /// Get the XML documentation associated with the method
     member x.XmlDoc =
         match x with
-        | ILMeth(_, _, _) -> XmlDoc.Empty
+        | ILMeth _ -> XmlDoc.Empty
         | FSMeth(_, _, vref, _) -> vref.XmlDoc
         | DefaultStructCtor _ -> XmlDoc.Empty
 #if !NO_EXTENSIONTYPING
@@ -1466,7 +1466,7 @@ type MethInfo =
                                 // Emit a warning, and ignore the DefaultParameterValue argument altogether.
                                 warning(Error(FSComp.SR.DefaultParameterValueNotAppropriateForArgument(), m))
                                 NotOptional
-                            | Some (Expr.Const ((ConstToILFieldInit fi), _, _)) ->
+                            | Some (Expr.Const (ConstToILFieldInit fi, _, _)) ->
                                 // Good case - all is well.
                                 CallerSide (Constant fi)
                             | _ ->
@@ -2056,7 +2056,7 @@ type PropInfo =
         | ILProp ilpinfo -> ilpinfo.IsVirtual
         | FSProp(g, ty, Some vref, _)
         | FSProp(g, ty, _, Some vref) ->
-            isInterfaceTy g ty  || (vref.MemberInfo.Value.MemberFlags.IsDispatchSlot)
+            isInterfaceTy g ty  || vref.MemberInfo.Value.MemberFlags.IsDispatchSlot
         | FSProp _ -> failwith "unreachable"
 #if !NO_EXTENSIONTYPING
         | ProvidedProp(_, pi, m) ->

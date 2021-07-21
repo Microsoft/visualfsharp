@@ -86,7 +86,7 @@ type Table<'T> =
 
     static member Create n =
       { name = n
-        tbl = new System.Collections.Generic.Dictionary<_, _>(1000, HashIdentity.Structural)
+        tbl = new Dictionary<_, _>(1000, HashIdentity.Structural)
         rows= new ResizeArray<_>(1000)
         count=0 }
 
@@ -99,10 +99,10 @@ let new_itbl n r = { itbl_name=n; itbl_rows=r }
 
 [<NoEquality; NoComparison>]
 type NodeOutTable<'Data, 'Node> =
-    { NodeStamp : ('Node -> Stamp)
-      NodeName : ('Node -> string)
-      GetRange : ('Node -> range)
-      Deref: ('Node -> 'Data)
+    { NodeStamp : 'Node -> Stamp
+      NodeName : 'Node -> string
+      GetRange : 'Node -> range
+      Deref: 'Node -> 'Data
       Name: string
       Table: Table<Stamp> }
     member x.Size = x.Table.Size
@@ -139,8 +139,8 @@ let pfailwith st str = ffailwith st.ofile str
 
 [<NoEquality; NoComparison>]
 type NodeInTable<'Data, 'Node> =
-    { LinkNode : ('Node -> 'Data -> unit)
-      IsLinked : ('Node -> bool)
+    { LinkNode : 'Node -> 'Data -> unit
+      IsLinked : 'Node -> bool
       Name : string
       Nodes : 'Node[] }
     member x.Get n = x.Nodes.[n]
@@ -190,8 +190,8 @@ let p_int32 n st =
     if n >= 0 && n <= 0x7F then
         p_byte (b0 n) st
     else if n >= 0x80 && n <= 0x3FFF then
-        p_byte ( (0x80 ||| (n >>> 8))) st
-        p_byte ( (n &&& 0xFF)) st
+        p_byte (0x80 ||| (n >>> 8)) st
+        p_byte (n &&& 0xFF) st
     else
         p_byte 0xFF st
         prim_p_int32 n st
@@ -886,7 +886,7 @@ let unpickleObjWithDanglingCcus file viewedScope (ilModule: ILModuleDef option) 
             (u_array u_encoded_simpletyp)
             u_byte_memory
             st2
-    let ccuTab       = new_itbl "iccus"       (Array.map (CcuThunk.CreateDelayed) ccuNameTab)
+    let ccuTab       = new_itbl "iccus"       (Array.map CcuThunk.CreateDelayed ccuNameTab)
     let stringTab    = new_itbl "istrings"    (Array.map decode_string stringTab)
     let pubpathTab   = new_itbl "ipubpaths"   (Array.map (decode_pubpath st2 stringTab) pubpathTab)
     let nlerefTab    = new_itbl "inlerefs"    (Array.map (decode_nleref st2 ccuTab stringTab) nlerefTab)
@@ -956,11 +956,11 @@ let u_ILPublicKey st =
     | _ -> ufailwith st "u_ILPublicKey"
 
 let u_ILVersion st =
-    let (major, minor, build, revision) = u_tup4 u_uint16 u_uint16 u_uint16 u_uint16 st
+    let major, minor, build, revision = u_tup4 u_uint16 u_uint16 u_uint16 u_uint16 st
     ILVersionInfo(major, minor, build, revision)
 
 let u_ILModuleRef st =
-    let (a, b, c) = u_tup3 u_string u_bool (u_option u_bytes) st
+    let a, b, c = u_tup3 u_string u_bool (u_option u_bytes) st
     ILModuleRef.Create(a, b, c)
 
 let u_ILAssemblyRef st =
@@ -1530,7 +1530,7 @@ let p_trait (TTrait(a, b, c, d, e, f)) st  =
     p_tup6 p_tys p_string p_MemberFlags p_tys (p_option p_ty) (p_option p_trait_sln) (a, b, c, d, e, !f) st
 
 let u_anonInfo_data st =
-    let (ccu, info, nms) = u_tup3 u_ccuref u_bool (u_array u_ident) st
+    let ccu, info, nms = u_tup3 u_ccuref u_bool (u_array u_ident) st
     AnonRecdTypeInfo.Create (ccu, mkTupInfo info, nms)
 
 let u_anonInfo st =
@@ -1541,20 +1541,20 @@ let u_trait_sln st =
     let tag = u_byte st
     match tag with
     | 0 ->
-        let (a, b, c, d) = u_tup4 u_ty (u_option u_ILTypeRef) u_ILMethodRef u_tys st
+        let a, b, c, d = u_tup4 u_ty (u_option u_ILTypeRef) u_ILMethodRef u_tys st
         ILMethSln(a, b, c, d)
     | 1 ->
-        let (a, b, c) = u_tup3 u_ty u_vref u_tys st
+        let a, b, c = u_tup3 u_ty u_vref u_tys st
         FSMethSln(a, b, c)
     | 2 ->
         BuiltInSln
     | 3 ->
         ClosedExprSln (u_expr_fwd st)
     | 4 ->
-        let (a, b, c) = u_tup3 u_tys u_rfref u_bool st
+        let a, b, c = u_tup3 u_tys u_rfref u_bool st
         FSRecdFieldSln(a, b, c)
     | 5 ->
-         let (a, b, c) = u_tup3 u_anonInfo u_tys u_int st
+         let a, b, c = u_tup3 u_anonInfo u_tys u_int st
          FSAnonRecdFieldSln(a, b, c)
     | _ -> ufailwith st "u_trait_sln"
 
@@ -1576,7 +1576,7 @@ let p_measure_varcon unt st =
      match unt with
      | Measure.Con tcref   -> p_measure_con tcref st
      | Measure.Var v       -> p_measure_var v st
-     | _                  -> pfailwith st ("p_measure_varcon: expected measure variable or constructor")
+     | _                  -> pfailwith st "p_measure_varcon: expected measure variable or constructor"
 
 // Pickle a positive integer power of a unit-of-measure variable or constructor
 let rec p_measure_pospower unt n st =
@@ -1831,7 +1831,7 @@ and p_tycon_repr x st =
     // The leading "p_byte 1" and "p_byte 0" come from the F# 2.0 format, which used an option value at this point.
     match x with
     | TRecdRepr fs         -> p_byte 1 st; p_byte 0 st; p_rfield_table fs st; false
-    | TUnionRepr x         -> p_byte 1 st; p_byte 1 st; p_array p_unioncase_spec (x.CasesTable.CasesByIndex) st; false
+    | TUnionRepr x         -> p_byte 1 st; p_byte 1 st; p_array p_unioncase_spec x.CasesTable.CasesByIndex st; false
     | TAsmRepr ilty        -> p_byte 1 st; p_byte 2 st; p_ILType ilty st; false
     | TFSharpObjectRepr r  -> p_byte 1 st; p_byte 3 st; p_tycon_objmodel_data r st; false
     | TMeasureableRepr ty  -> p_byte 1 st; p_byte 4 st; p_ty ty st; false
@@ -1891,7 +1891,7 @@ and p_recdfield_spec x st =
     p_access x.rfield_access st
 
 and p_rfield_table x st =
-    p_array p_recdfield_spec (x.FieldsByIndex) st
+    p_array p_recdfield_spec x.FieldsByIndex st
 
 and p_entity_spec_data (x: Entity) st =
     p_tyar_specs (x.entity_typars.Force(x.entity_range)) st
@@ -2526,7 +2526,7 @@ and u_op st =
     | 17 -> let a = u_lval_op_kind st
             let b = u_vref st
             TOp.LValueOp (a, b)
-    | 18 -> let (a1, a2, a3, a4, a5, a7, a8, a9) = (u_tup8 u_bool u_bool u_bool u_bool u_vrefFlags u_bool u_bool  u_ILMethodRef) st
+    | 18 -> let a1, a2, a3, a4, a5, a7, a8, a9 = (u_tup8 u_bool u_bool u_bool u_bool u_vrefFlags u_bool u_bool  u_ILMethodRef) st
             let b = u_tys st
             let c = u_tys st
             let d = u_tys st

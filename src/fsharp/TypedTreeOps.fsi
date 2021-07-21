@@ -660,7 +660,7 @@ val tryTcrefOfAppTy: TcGlobals -> TType -> ValueOption<TyconRef>
 
 val tryDestTyparTy: TcGlobals -> TType -> ValueOption<Typar>
 
-val tryDestFunTy: TcGlobals -> TType -> ValueOption<(TType * TType)>
+val tryDestFunTy: TcGlobals -> TType -> ValueOption<TType * TType>
 
 val tryDestAnonRecdTy: TcGlobals -> TType -> ValueOption<AnonRecdTypeInfo * TType list>
 
@@ -995,7 +995,7 @@ type DisplayEnv =
       escapeKeywordNames: bool
       g: TcGlobals
       contextAccessibility: Accessibility
-      generatedValueLayout: (Val -> Layout option)
+      generatedValueLayout: Val -> Layout option
       genericParameterStyle: GenericParameterStyle }
 
     member SetOpenPaths: string list list -> DisplayEnv
@@ -1256,7 +1256,7 @@ val IsHiddenRecdField: (Remap * SignatureHidingInfo) list -> RecdFieldRef -> boo
 val remarkExpr: range -> Expr -> Expr
  
 /// Build the application of a (possibly generic, possibly curried) function value to a set of type and expression arguments
-val primMkApp: (Expr * TType) -> TypeInst -> Exprs -> range -> Expr
+val primMkApp: Expr * TType -> TypeInst -> Exprs -> range -> Expr
 
 /// Build the application of a (possibly generic, possibly curried) function value to a set of type and expression arguments.
 /// Reduce the application via let-bindings if the function value is a lambda expression.
@@ -2405,11 +2405,11 @@ val ValRefIsExplicitImpl: TcGlobals -> ValRef -> bool
 
 val (|LinearMatchExpr|_|): Expr -> (DebugPointAtBinding * range * DecisionTree * DecisionTreeTarget * Expr * DebugPointForTarget * range * TType) option
 
-val rebuildLinearMatchExpr: (DebugPointAtBinding * range * DecisionTree * DecisionTreeTarget * Expr * DebugPointForTarget * range * TType) -> Expr
+val rebuildLinearMatchExpr: DebugPointAtBinding * range * DecisionTree * DecisionTreeTarget * Expr * DebugPointForTarget * range * TType -> Expr
 
 val (|LinearOpExpr|_|): Expr -> (TOp * TypeInst * Expr list * Expr * range) option
 
-val rebuildLinearOpExpr: (TOp * TypeInst * Expr list * Expr * range) -> Expr
+val rebuildLinearOpExpr: TOp * TypeInst * Expr list * Expr * range -> Expr
 
 val mkCoerceIfNeeded: TcGlobals -> tgtTy: TType -> srcTy: TType -> Expr -> Expr
 
@@ -2417,7 +2417,7 @@ val (|InnerExprPat|): Expr -> Expr
 
 val allValsOfModDef: ModuleOrNamespaceExpr -> seq<Val>
 
-val BindUnitVars: TcGlobals -> (Val list * ArgReprInfo list * Expr) -> Val list * Expr
+val BindUnitVars: TcGlobals -> Val list * ArgReprInfo list * Expr -> Val list * Expr
 
 val isThreadOrContextStatic: TcGlobals -> Attrib list -> bool
 

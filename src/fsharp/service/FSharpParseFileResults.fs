@@ -297,7 +297,7 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
         SyntaxTraversal.Traverse(opGreaterEqualPos, input, { new SyntaxVisitorBase<_>() with
             member _.VisitExpr(_, _, defaultTraverse, expr) =
                 match expr with
-                | SynExpr.Paren((InfixAppOfOpEqualsGreater(lambdaArgs, lambdaBody) as app), _, _, _) ->
+                | SynExpr.Paren(InfixAppOfOpEqualsGreater(lambdaArgs, lambdaBody) as app, _, _, _) ->
                     Some (app.Range, lambdaArgs.Range, lambdaBody.Range)
                 | _ -> defaultTraverse expr
 
@@ -457,7 +457,7 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
             and walkExprs es = List.collect (walkExpr false) es
             and walkBinds es = List.collect walkBind es
             and walkMatchClauses cl = 
-                [ for (SynMatchClause(_, whenExpr, e, _, _)) in cl do 
+                [ for SynMatchClause(_, whenExpr, e, _, _) in cl do 
                     match whenExpr with 
                     | Some e -> yield! walkExpr false e 
                     | _ -> ()
@@ -561,7 +561,7 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                       | None -> ()
                       | Some (arg, _) -> yield! walkExpr false arg
                       yield! walkBinds bs  
-                      for (SynInterfaceImpl(_, bs, _)) in is do yield! walkBinds bs
+                      for SynInterfaceImpl(_, bs, _) in is do yield! walkBinds bs
 
                   | SynExpr.While (spWhile, e1, e2, _) -> 
                       yield! walkWhileSeqPt spWhile
@@ -585,7 +585,7 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
 
                   | SynExpr.MatchLambda (_isExnMatch, _argm, cl, spBind, _wholem) -> 
                       yield! walkBindSeqPt spBind
-                      for (SynMatchClause(_, whenExpr, e, _, _)) in cl do 
+                      for SynMatchClause(_, whenExpr, e, _, _) in cl do 
                           yield! walkExprOpt false whenExpr
                           yield! walkExpr true e 
 
@@ -595,7 +595,7 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                   | SynExpr.Match (spBind, e, cl, _) ->
                       yield! walkBindSeqPt spBind
                       yield! walkExpr false e 
-                      for (SynMatchClause(_, whenExpr, e, _, _)) in cl do 
+                      for SynMatchClause(_, whenExpr, e, _, _) in cl do 
                           yield! walkExprOpt false whenExpr
                           yield! walkExpr true e 
 
@@ -643,7 +643,7 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                   | SynExpr.LetOrUseBang (spBind, _, _, _, e1, es, e2, _) -> 
                       yield! walkBindSeqPt spBind
                       yield! walkExpr true e1
-                      for (andBangSpBind,_,_,_,eAndBang,_) in es do
+                      for andBangSpBind,_,_,_,eAndBang,_ in es do
                           yield! walkBindSeqPt andBangSpBind
                           yield! walkExpr true eAndBang
                       yield! walkExpr true e2
@@ -651,12 +651,12 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                   | SynExpr.MatchBang (spBind, e, cl, _) ->
                       yield! walkBindSeqPt spBind
                       yield! walkExpr false e 
-                      for (SynMatchClause(_, whenExpr, e, _, _)) in cl do 
+                      for SynMatchClause(_, whenExpr, e, _, _) in cl do 
                           yield! walkExprOpt false whenExpr
                           yield! walkExpr true e ]
             
             // Process a class declaration or F# type declaration
-            let rec walkTycon (SynTypeDefn(SynComponentInfo(_, _, _, _, _, _, _, _), repr, membDefns, implicitCtor, m)) =
+            let rec walkTycon (SynTypeDefn(SynComponentInfo _, repr, membDefns, implicitCtor, m)) =
                 if not (isMatchRange m) then [] else
                 [ for memb in membDefns do yield! walkMember memb
                   match repr with
@@ -698,7 +698,7 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                       for d in decls do yield! walkDecl d
                   | SynModuleDecl.Types(tydefs, m) when isMatchRange m -> 
                       for d in tydefs do yield! walkTycon d
-                  | SynModuleDecl.Exception(SynExceptionDefn(SynExceptionDefnRepr(_, _, _, _, _, _), membDefns, _), m) 
+                  | SynModuleDecl.Exception(SynExceptionDefn(SynExceptionDefnRepr _, membDefns, _), m) 
                         when isMatchRange m ->
                       for m in membDefns do yield! walkMember m
                   | _ -> () ] 

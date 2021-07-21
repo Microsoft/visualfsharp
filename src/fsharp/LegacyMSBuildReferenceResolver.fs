@@ -12,7 +12,7 @@ module FSharp.Compiler.CodeAnalysis.LegacyMSBuildReferenceResolver
     open FSharp.Compiler.IO
 
     // Reflection wrapper for properties
-    type System.Object with
+    type Object with
         member this.GetPropertyValue(propName) =
             this.GetType().GetProperty(propName, BindingFlags.Public).GetValue(this, null)
 
@@ -71,7 +71,7 @@ module FSharp.Compiler.CodeAnalysis.LegacyMSBuildReferenceResolver
 
     /// Get the path to the .NET Framework implementation assemblies by using ToolLocationHelper.GetPathToDotNetFramework
     /// This is only used to specify the "last resort" path for assembly resolution.
-    let GetPathToDotNetFrameworkImlpementationAssemblies(v) =
+    let GetPathToDotNetFrameworkImlpementationAssemblies v =
         let v =
             match v with
             | Net45 ->  Some TargetDotNetFrameworkVersion.Version45
@@ -92,7 +92,7 @@ module FSharp.Compiler.CodeAnalysis.LegacyMSBuildReferenceResolver
             | x -> [x]
         | _ -> []
 
-    let GetPathToDotNetFrameworkReferenceAssemblies(version) = 
+    let GetPathToDotNetFrameworkReferenceAssemblies version = 
 #if NETSTANDARD
         ignore version
         let r : string list = []
@@ -233,8 +233,8 @@ module FSharp.Compiler.CodeAnalysis.LegacyMSBuildReferenceResolver
                     explicitIncludeDirs: string list,
                     implicitIncludeDir: string,
                     allowRawFileName: bool,
-                    logMessage: (string -> unit), 
-                    logDiagnostic: (bool -> string -> string -> unit)) =
+                    logMessage: string -> unit, 
+                    logDiagnostic: bool -> string -> string -> unit) =
                       
         let frameworkRegistryBase, assemblyFoldersSuffix, assemblyFoldersConditions = 
           "Software\Microsoft\.NetFramework", "AssemblyFoldersEx" , ""              
@@ -302,8 +302,8 @@ module FSharp.Compiler.CodeAnalysis.LegacyMSBuildReferenceResolver
              |]    
             
         let assemblies = 
-            [| for (referenceName,baggage) in references -> 
-               let item = new Microsoft.Build.Utilities.TaskItem(referenceName) :> ITaskItem
+            [| for referenceName,baggage in references -> 
+               let item = new TaskItem(referenceName) :> ITaskItem
                item.SetMetadata("Baggage", baggage)
                item |]
         let rar = 
@@ -356,7 +356,7 @@ module FSharp.Compiler.CodeAnalysis.LegacyMSBuildReferenceResolver
                 // unrooted may still find 'local' assemblies by virtue of the fact that "implicitIncludeDir" is one of the places searched during 
                 // assembly resolution.
                 let references = 
-                    [| for ((file,baggage) as data) in references -> 
+                    [| for file,baggage as data in references -> 
                             // However, MSBuild will not resolve 'relative' paths, even when e.g. implicitIncludeDir is part of the search.  As a result,
                             // if we have an unrooted path+filename, we'll assume this is relative to the project directory and root it.
                             if FileSystem.IsPathRootedShim(file) then

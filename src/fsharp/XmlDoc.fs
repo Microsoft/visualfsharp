@@ -21,7 +21,7 @@ type XmlDoc(unprocessedLines: string[], range: range) =
     let rec processLines (lines: string list) =
         match lines with
         | [] -> []
-        | (lineA :: rest) as lines ->
+        | lineA :: rest as lines ->
             let lineAT = lineA.TrimStart([|' '|])
             if lineAT = "" then processLines rest
             elif lineAT.StartsWithOrdinal("<") then lines
@@ -145,7 +145,7 @@ and XmlDocStatics() =
 
 /// Used to collect XML documentation during lexing and parsing.
 type XmlDocCollector() =
-    let mutable savedLines = new ResizeArray<(string * range)>()
+    let mutable savedLines = new ResizeArray<string * range>()
     let mutable savedGrabPoints = new ResizeArray<pos>()
     let posCompare p1 p2 = if posGeq p1 p2 then 1 else if posEq p1 p2 then 0 else -1
     let savedGrabPointsAsArray =
@@ -203,7 +203,7 @@ type PreXmlDoc =
                 XmlDoc.Empty
             else
                 let lines = Array.map fst preLines
-                let m = Array.reduce Range.unionRanges (Array.map snd preLines)
+                let m = Array.reduce unionRanges (Array.map snd preLines)
                 let doc = XmlDoc (lines, m)
                 if check then
                    doc.Check(paramNamesOpt)

@@ -66,7 +66,7 @@ module IncrementalBuilderEventTesting =
         // called by unit tests, returns 'n' most recent additions.
         member this.MostRecentList(n: int) : list<'T> =
             if n < 0 || n > MAX then
-                raise <| new System.ArgumentOutOfRangeException("n", sprintf "n must be between 0 and %d, inclusive, but got %d" MAX n)
+                raise <| new ArgumentOutOfRangeException("n", sprintf "n must be between 0 and %d, inclusive, but got %d" MAX n)
             let mutable remaining = n
             let mutable s = []
             let mutable i = curIndex - 1
@@ -90,7 +90,7 @@ module IncrementalBuilderEventTesting =
     let GetMostRecentIncrementalBuildEvents n = MRU.MostRecentList n
     let GetCurrentIncrementalBuildEventNum() = MRU.CurrentEventNum
 
-module Tc = FSharp.Compiler.CheckExpressions
+module Tc = CheckExpressions
 
 // This module is only here to contain the SyntaxTree type as to avoid amiguity with the module FSharp.Compiler.Syntax.
 [<AutoOpen>]
@@ -580,7 +580,7 @@ type FrameworkImportsCache(size) =
     let gate = obj()
 
     // Mutable collection protected via CompilationThreadToken
-    let frameworkTcImportsCache = AgedLookup<AnyCallerThreadToken, FrameworkImportsCacheKey, GraphNode<(TcGlobals * TcImports)>>(size, areSimilar=(fun (x, y) -> x = y))
+    let frameworkTcImportsCache = AgedLookup<AnyCallerThreadToken, FrameworkImportsCacheKey, GraphNode<TcGlobals * TcImports>>(size, areSimilar=(fun (x, y) -> x = y))
 
     /// Reduce the size of the cache in low-memory scenarios
     member _.Downsize() = frameworkTcImportsCache.Resize(AnyCallerThread, newKeepStrongly=0)
@@ -696,7 +696,7 @@ type RawFSharpAssemblyDataBackedByLanguageService (tcConfig, tcGlobals, generate
         member _.GetRawFSharpOptimizationData(_m, _ilShortAssemName, _filename) = [ ]
         member _.GetRawTypeForwarders() = mkILExportedTypes []  // TODO: cross-project references with type forwarders
         member _.ShortAssemblyName = assemblyName
-        member _.ILScopeRef = IL.ILScopeRef.Assembly ilAssemRef
+        member _.ILScopeRef = ILScopeRef.Assembly ilAssemRef
         member _.ILAssemblyRefs = [] // These are not significant for service scenarios
         member _.HasAnyFSharpSignatureDataAttribute =  true
         member _.HasMatchingFSharpSignatureDataAttribute = true
@@ -921,12 +921,12 @@ type IncrementalBuilderInitialState =
     {
         initialBoundModel: BoundModel
         tcGlobals: TcGlobals
-        referencedAssemblies: block<(Choice<string, IProjectReference> * (TimeStampCache -> DateTime))>
+        referencedAssemblies: block<Choice<string, IProjectReference> * (TimeStampCache -> DateTime)>
         tcConfig: TcConfig
         outfile: string
         assemblyName: string
         lexResourceManager: Lexhelp.LexResourceManager
-        fileNames: block<(range * string * (bool * bool))>
+        fileNames: block<range * string * (bool * bool)>
         enablePartialTypeChecking: bool
         beforeFileChecked: Event<string>
         fileChecked: Event<string>
@@ -995,7 +995,7 @@ type IncrementalBuilderState =
         stampedReferencedAssemblies: block<DateTime>
         initialBoundModel: GraphNode<BoundModel>
         boundModels: block<GraphNode<BoundModel>>
-        finalizedBoundModel: GraphNode<((ILAssemblyRef * ProjectAssemblyDataResult * TypedImplFile list option * BoundModel) * DateTime)>
+        finalizedBoundModel: GraphNode<(ILAssemblyRef * ProjectAssemblyDataResult * TypedImplFile list option * BoundModel) * DateTime>
     }
 
 [<AutoOpen>]
@@ -1254,7 +1254,7 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
         | Some (boundModel, timestamp) -> Some (PartialCheckResults (boundModel, timestamp))
         | _ -> None
 
-    member builder.TryGetCheckResultsBeforeFileInProject (filename) =
+    member builder.TryGetCheckResultsBeforeFileInProject filename =
         let cache = TimeStampCache defaultTimeStamp
         let tmpState = computeStampedFileNames initialState currentState cache
 
@@ -1266,7 +1266,7 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
     member builder.AreCheckResultsBeforeFileInProjectReady filename =
         (builder.TryGetCheckResultsBeforeFileInProject filename).IsSome
 
-    member _.GetCheckResultsBeforeSlotInProject (slotOfFile) =
+    member _.GetCheckResultsBeforeSlotInProject slotOfFile =
       node {
         let cache = TimeStampCache defaultTimeStamp
         do! checkFileTimeStamps cache
@@ -1276,7 +1276,7 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
         | None -> return! failwith "Expected results to be ready. (GetCheckResultsBeforeSlotInProject)."
       }
 
-    member _.GetFullCheckResultsBeforeSlotInProject (slotOfFile) =
+    member _.GetFullCheckResultsBeforeSlotInProject slotOfFile =
       node {
         let cache = TimeStampCache defaultTimeStamp
         do! checkFileTimeStamps cache
@@ -1288,19 +1288,19 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
         | None -> return! failwith "Expected results to be ready. (GetFullCheckResultsBeforeSlotInProject)."
       }
 
-    member builder.GetCheckResultsBeforeFileInProject (filename) =
+    member builder.GetCheckResultsBeforeFileInProject filename =
         let slotOfFile = builder.GetSlotOfFileName filename
-        builder.GetCheckResultsBeforeSlotInProject (slotOfFile)
+        builder.GetCheckResultsBeforeSlotInProject slotOfFile
 
-    member builder.GetCheckResultsAfterFileInProject (filename) =
+    member builder.GetCheckResultsAfterFileInProject filename =
         let slotOfFile = builder.GetSlotOfFileName filename + 1
-        builder.GetCheckResultsBeforeSlotInProject (slotOfFile)
+        builder.GetCheckResultsBeforeSlotInProject slotOfFile
 
-    member builder.GetFullCheckResultsBeforeFileInProject (filename) =
+    member builder.GetFullCheckResultsBeforeFileInProject filename =
         let slotOfFile = builder.GetSlotOfFileName filename
-        builder.GetFullCheckResultsBeforeSlotInProject (slotOfFile)
+        builder.GetFullCheckResultsBeforeSlotInProject slotOfFile
 
-    member builder.GetFullCheckResultsAfterFileInProject (filename) =
+    member builder.GetFullCheckResultsAfterFileInProject filename =
         node {
             let slotOfFile = builder.GetSlotOfFileName filename + 1
             let! result = builder.GetFullCheckResultsBeforeSlotInProject(slotOfFile)
@@ -1316,7 +1316,7 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
         do! checkFileTimeStamps cache
         let! result = currentState.finalizedBoundModel.GetOrComputeValue()
         match result with
-        | ((ilAssemRef, tcAssemblyDataOpt, tcAssemblyExprOpt, boundModel), timestamp) ->
+        | (ilAssemRef, tcAssemblyDataOpt, tcAssemblyExprOpt, boundModel), timestamp ->
             return PartialCheckResults (boundModel, timestamp), ilAssemRef, tcAssemblyDataOpt, tcAssemblyExprOpt
       }
 
@@ -1353,7 +1353,7 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
     member this.ContainsFile(filename: string) =
         (this.TryGetSlotOfFileName filename).IsSome
 
-    member builder.GetParseResultsForFile (filename) =
+    member builder.GetParseResultsForFile filename =
         let slotOfFile = builder.GetSlotOfFileName filename
         let fileInfo = fileNames.[slotOfFile]
         // re-parse on demand instead of retaining
@@ -1491,7 +1491,7 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
             // Resolve assemblies and create the framework TcImports. This is done when constructing the
             // builder itself, rather than as an incremental task. This caches a level of "system" references. No type providers are
             // included in these references.
-            let! (tcGlobals, frameworkTcImports, nonFrameworkResolutions, unresolvedReferences) = frameworkTcImportsCache.Get(tcConfig)
+            let! tcGlobals, frameworkTcImports, nonFrameworkResolutions, unresolvedReferences = frameworkTcImportsCache.Get(tcConfig)
 
             // Note we are not calling errorLogger.GetDiagnostics() anywhere for this task.
             // This is ok because not much can actually go wrong here.
@@ -1515,7 +1515,7 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
                     yield (Choice1Of2 fileName, (fun (cache: TimeStampCache) -> cache.GetFileTimeStamp fileName))
 
                   for pr in projectReferences  do
-                    yield Choice2Of2 pr, (fun (cache: TimeStampCache) -> cache.GetProjectReferenceTimeStamp (pr)) ]
+                    yield Choice2Of2 pr, (fun (cache: TimeStampCache) -> cache.GetProjectReferenceTimeStamp pr) ]
 
             //
             //
@@ -1540,7 +1540,7 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
                 ((sourceFiles, flags) ||> List.map2 (fun (m, nm) flag -> (m, nm, (flag, isExe))))
 
             let basicDependencies =
-                [ for (UnresolvedAssemblyReference(referenceText, _))  in unresolvedReferences do
+                [ for UnresolvedAssemblyReference(referenceText, _)  in unresolvedReferences do
                     // Exclude things that are definitely not a file name
                     if not(FileSystem.IsInvalidPathShim referenceText) then
                         let file = if FileSystem.IsPathRootedShim referenceText then referenceText else Path.Combine(projectDirectory, referenceText)
@@ -1551,7 +1551,7 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
 
             let allDependencies =
                 [| yield! basicDependencies
-                   for (_, f, _) in sourceFiles do
+                   for _, f, _ in sourceFiles do
                         yield f |]
 
             // For scripts, the dependency provider is already available.

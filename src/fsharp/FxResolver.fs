@@ -78,7 +78,7 @@ type internal FxResolver(assumeDotNetFramework: bool, projectDir: string, useSdk
                 p.BeginErrorReadLine()
                 if not(p.WaitForExit(timeout)) then
                     // Timed out resolving throw a diagnostic.
-                    raise (new TimeoutException(sprintf "Timeout executing command '%s' '%s'" (psi.FileName) (psi.Arguments)))
+                    raise (new TimeoutException(sprintf "Timeout executing command '%s' '%s'" psi.FileName psi.Arguments))
                 else
                     p.WaitForExit()
 #if DEBUG
@@ -346,7 +346,7 @@ type internal FxResolver(assumeDotNetFramework: bool, projectDir: string, useSdk
         let pattern = "\"name\": \"" + tfmPrefix
         let startPos =
             let startPos = file.IndexOf(pattern, StringComparison.OrdinalIgnoreCase)
-            if startPos >= 0  then startPos + (pattern.Length) else startPos
+            if startPos >= 0  then startPos + pattern.Length else startPos
         let length =
             if startPos >= 0 then
                 let ep = file.IndexOf("\"", startPos)
@@ -848,7 +848,7 @@ type internal FxResolver(assumeDotNetFramework: bool, projectDir: string, useSdk
         tryGetDesiredDotNetSdkVersionForDirectoryInfo()
 
     // The set of references entered into the TcConfigBuilder for scripts prior to computing the load closure.
-    member _.GetDefaultReferences (useFsiAuxLib) =
+    member _.GetDefaultReferences useFsiAuxLib =
       fxlock.AcquireLock <| fun fxtok -> 
         RequireFxResolverLock(fxtok, "assuming all member require lock")
         let defaultReferences =

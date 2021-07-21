@@ -6,10 +6,10 @@ open System.Collections.Generic
 open System.IO
 open System.Reflection.Metadata
 
-type BYTE = System.Byte
-type DWORD = System.UInt32
-type WCHAR = System.Char
-type WORD = System.UInt16
+type BYTE = Byte
+type DWORD = UInt32
+type WCHAR = Char
+type WORD = UInt16
 
 [<Class>]
 type RESOURCE_STRING =
@@ -42,13 +42,13 @@ type Win32Resource =
 
 [<Class>]
 type CvtResFile =
-    static member ReadResFile : stream:Stream -> System.Collections.Generic.List<RESOURCE>
+    static member ReadResFile : stream:Stream -> List<RESOURCE>
 
 [<Class>]
 type Win32ResourceConversions =
     static member AppendIconToResourceStream : resStream:Stream * iconStream:Stream -> unit
-    static member AppendVersionToResourceStream : resStream:Stream * isDll:System.Boolean * fileVersion:string * originalFileName:string * internalName:string * productVersion:string * assemblyVersion:Version * ?fileDescription:string * ?legalCopyright:string * ?legalTrademarks:string * ?productName:string * ?comments:string * ?companyName:string -> unit
-    static member AppendManifestToResourceStream : resStream:Stream * manifestStream:Stream * isDll:System.Boolean -> unit
+    static member AppendVersionToResourceStream : resStream:Stream * isDll:Boolean * fileVersion:string * originalFileName:string * internalName:string * productVersion:string * assemblyVersion:Version * ?fileDescription:string * ?legalCopyright:string * ?legalTrademarks:string * ?productName:string * ?comments:string * ?companyName:string -> unit
+    static member AppendManifestToResourceStream : resStream:Stream * manifestStream:Stream * isDll:Boolean -> unit
 
 // Write native resources
 [<Class>]

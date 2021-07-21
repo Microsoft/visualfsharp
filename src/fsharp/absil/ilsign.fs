@@ -42,9 +42,9 @@ module internal FSharp.Compiler.AbstractIL.StrongNameSign
     let RSA_PRIV_MAGIC = int 0x32415352
 
     let getResourceString (_, str) = str
-    let check _action (hresult) =
+    let check _action hresult =
       if uint32 hresult >= 0x80000000ul then
-        System.Runtime.InteropServices.Marshal.ThrowExceptionForHR hresult
+        Marshal.ThrowExceptionForHR hresult
 
     [<Struct; StructLayout(LayoutKind.Explicit)>]
     type ByteArrayUnion =
@@ -73,7 +73,7 @@ module internal FSharp.Compiler.AbstractIL.StrongNameSign
             | PEMagic.PE32Plus ->   peHeaderOffset + 0x90,0xF0              // offsetof(IMAGE_OPTIONAL_HEADER64, DataDirectory[IMAGE_DIRECTORY_ENTRY_SECURITY]), sizeof(IMAGE_OPTIONAL_HEADER64)
             | _ -> raise (BadImageFormatException(getResourceString(FSComp.SR.ilSignInvalidMagicValue())))
 
-        let allHeadersSize = peHeaderOffset + peHeaderSize + int (peHeaders.CoffHeader.NumberOfSections) * 0x28;      // sizeof(IMAGE_SECTION_HEADER)
+        let allHeadersSize = peHeaderOffset + peHeaderSize + int peHeaders.CoffHeader.NumberOfSections * 0x28;      // sizeof(IMAGE_SECTION_HEADER)
         let allHeaders =
             let array:byte[] = Array.zeroCreate<byte> allHeadersSize
             peReader.GetEntireImage().GetContent().CopyTo(0, array, 0, allHeadersSize)
@@ -121,7 +121,7 @@ module internal FSharp.Compiler.AbstractIL.StrongNameSign
         member x.ReadInt32:int =
             let offset = x._offset
             x._offset <- offset + 4
-            int (x._blob.[offset]) ||| (int (x._blob.[offset + 1]) <<< 8) ||| (int (x._blob.[offset + 2]) <<< 16) ||| (int (x._blob.[offset + 3]) <<< 24)
+            int x._blob.[offset] ||| (int x._blob.[offset + 1] <<< 8) ||| (int x._blob.[offset + 2] <<< 16) ||| (int x._blob.[offset + 3] <<< 24)
 
         member x.ReadBigInteger (length:int):byte[] =
             let arr:byte[] = Array.zeroCreate<byte> length
@@ -197,7 +197,7 @@ module internal FSharp.Compiler.AbstractIL.StrongNameSign
             let expAsDword =
                 let mutable buffer = int 0
                 for i in 0 .. rsaParameters.Exponent.Length - 1 do
-                   buffer <- (buffer <<< 8) ||| int (rsaParameters.Exponent.[i])
+                   buffer <- (buffer <<< 8) ||| int rsaParameters.Exponent.[i]
                 buffer
 
             bw.Write expAsDword                                                        // RSAPubKey.pubExp

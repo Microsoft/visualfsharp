@@ -365,7 +365,7 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) as this =
              let rfinfos = GetImmediateIntrinsicRecdOrClassFieldsOfType (optFilter, ad) m ty 
              match acc with 
              | Some(MethodItem(inheritedMethSets)) when not (isNil minfos) -> Some(MethodItem (minfos :: inheritedMethSets))
-             | _ when not (isNil minfos) -> Some(MethodItem ([minfos]))
+             | _ when not (isNil minfos) -> Some(MethodItem [minfos])
              | Some(PropertyItem(inheritedPropSets)) when not (isNil pinfos) -> Some(PropertyItem(pinfos :: inheritedPropSets))
              | _ when not (isNil pinfos) -> Some(PropertyItem([pinfos]))
              | _ when not (isNil finfos) -> Some(ILFieldItem(finfos))
@@ -443,7 +443,7 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) as this =
               // Only cache closed, monomorphic types (closed = all members for the type
               // have been processed). Generic type instantiations could be processed if we had 
               // a decent hash function for these.
-              canMemoize=(fun (_flags, (_: range), ty) -> 
+              canMemoize=(fun (_flags, _: range, ty) -> 
                                     match stripTyEqns g ty with 
                                     | TType_app(tcref, []) -> tcref.TypeContents.tcaug_closed 
                                     | _ -> false),

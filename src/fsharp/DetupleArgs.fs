@@ -390,7 +390,7 @@ let rec minimalCallPattern callPattern =
         match minimalCallPattern tss with
         | []  -> []              (* drop trailing UnknownTS *)
         | tss -> UnknownTS :: tss (* non triv tss tail *)
-    | (TupleTS ts) :: tss -> TupleTS ts :: minimalCallPattern tss
+    | TupleTS ts :: tss -> TupleTS ts :: minimalCallPattern tss
 
 /// Combines a list of callpatterns into one common callpattern.
 let commonCallPattern callPatterns =
@@ -690,7 +690,7 @@ let rec collapseArg env bindings ts (x: Expr) =
         let bindings, xs = buildProjections env bindings x xtys
         collapseArg env bindings (TupleTS tss) (mkRefTupled env.eg m xs xtys)
 
-and collapseArgs env bindings n (callPattern) args =
+and collapseArgs env bindings n callPattern args =
     match callPattern, args with
     | [], args        -> bindings, args
     | ts :: tss, arg :: args -> 

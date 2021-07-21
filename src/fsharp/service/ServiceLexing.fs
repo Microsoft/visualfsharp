@@ -175,7 +175,7 @@ module internal TokenClassifications =
                 // This is related to 4783. Recover by treating as lower case identifier.
                 (FSharpTokenColorKind.Identifier, FSharpTokenCharKind.Identifier, FSharpTokenTriggerClass.None)
             else
-                if System.Char.ToUpperInvariant s.[0] = s.[0] then
+                if Char.ToUpperInvariant s.[0] = s.[0] then
                     (FSharpTokenColorKind.UpperIdentifier, FSharpTokenCharKind.Identifier, FSharpTokenTriggerClass.None)
                 else
                     (FSharpTokenColorKind.Identifier, FSharpTokenCharKind.Identifier, FSharpTokenTriggerClass.None)
@@ -265,7 +265,7 @@ module internal TokenClassifications =
         | CONSTRAINT | INSTANCE | DELEGATE | INHERIT|CONSTRUCTOR|DEFAULT|OVERRIDE|ABSTRACT|CLASS
         | MEMBER | STATIC | NAMESPACE
         | OASSERT | OLAZY | ODECLEND | OBLOCKSEP | OEND | OBLOCKBEGIN | ORIGHT_BLOCK_END
-        | OBLOCKEND | OBLOCKEND_COMING_SOON | OBLOCKEND_IS_HERE | OTHEN | OELSE | OLET(_)
+        | OBLOCKEND | OBLOCKEND_COMING_SOON | OBLOCKEND_IS_HERE | OTHEN | OELSE | OLET _
         | OBINDER _ | OAND_BANG _ | BINDER _ | ODO | OWITH | OFUNCTION | OFUN | ORESET | ODUMMY _ | DO_BANG
         | ODO_BANG | YIELD _ | YIELD_BANG  _ | OINTERFACE_MEMBER
         | ELIF | RARROW | LARROW | SIG | STRUCT
@@ -442,8 +442,8 @@ module internal LexerStateEncoding =
         let mutable ifdefStackBits = 0
         for ifOrElse in ifdefStack do
             match ifOrElse with
-            | (IfDefIf, _) -> ()
-            | (IfDefElse, _) ->
+            | IfDefIf, _ -> ()
+            | IfDefElse, _ ->
                 ifdefStackBits <- (ifdefStackBits ||| (1 <<< ifdefStackCount))
             ifdefStackCount <- ifdefStackCount + 1
 
@@ -706,7 +706,7 @@ type FSharpLineTokenizer(lexbuf: UnicodeLexing.Lexbuf,
         | LexCont.String (ifdefs, stringNest, style, kind, m) ->
             lexargs.ifdefStack <- ifdefs
             lexargs.stringNest <- stringNest
-            use buf = ByteBuffer.Create (Lexer.StringCapacity)
+            use buf = ByteBuffer.Create Lexer.StringCapacity
             let args = (buf, LexerStringFinisher.Default, m, kind, lexargs)
             match style with
             | LexerStringStyle.SingleQuote -> Lexer.singleQuoteString args skip lexbuf
@@ -771,7 +771,7 @@ type FSharpLineTokenizer(lexbuf: UnicodeLexing.Lexbuf,
                 | HASH_ENDIF (m, lineStr, cont) when lineStr <> "" ->
                     false, processHashEndElse m.StartColumn lineStr 5 cont
                 | HASH_IDENT(ident) ->
-                    delayToken(IDENT (ident), leftc + 1, rightc)
+                    delayToken(IDENT ident, leftc + 1, rightc)
                     false, (HASH, leftc, leftc)
                 | RQUOTE_DOT (s, raw) ->
                     delayToken(DOT, rightc, rightc)
@@ -840,7 +840,7 @@ type FSharpLineTokenizer(lexbuf: UnicodeLexing.Lexbuf,
                 None, LexerStateEncoding.revertToDefaultLexCont, 0
             | _ ->
                 // Get the information about the token
-                let (colorClass, charClass, triggerClass) = TokenClassifications.tokenInfo token
+                let colorClass, charClass, triggerClass = TokenClassifications.tokenInfo token
 
                 let lexcontFinal =
                     // If we're using token from cache, we don't move forward with lexing
@@ -927,7 +927,7 @@ type FSharpSourceTokenizer(conditionalDefines: string list, filename: string opt
     let checkLanguageFeatureErrorRecover (_featureId:LanguageFeature) _range = ()
     let reportLibraryOnlyFeatures = true
 
-    let lexResourceManager = new Lexhelp.LexResourceManager()
+    let lexResourceManager = new LexResourceManager()
 
     let lexargs = mkLexargs(conditionalDefines, LightSyntaxStatus(true, false), lexResourceManager, [], DiscardErrorsLogger, PathMap.empty)
 
@@ -950,7 +950,7 @@ module FSharpKeywords =
 
     let KeywordsWithDescription = keywordsWithDescription
 
-    let KeywordNames = Lexhelp.Keywords.keywordNames
+    let KeywordNames = keywordNames
 
 [<Flags>]
 type FSharpLexerFlags =
@@ -1157,7 +1157,7 @@ type FSharpTokenKind =
 [<Struct;NoComparison;NoEquality>]
 type FSharpToken =
 
-    val private tok: Parser.token
+    val private tok: token
     val private tokRange: range
 
     new (tok, tokRange) = { tok = tok; tokRange = tokRange }
@@ -1524,7 +1524,7 @@ module FSharpLexerImpl =
 
         let lexbuf = UnicodeLexing.SourceTextAsLexbuf(reportLibraryOnlyFeatures, supportsFeature, checkLanguageFeatureErrorRecover, text)
         let lightStatus = LightSyntaxStatus(isLightSyntaxOn, true)
-        let lexargs = mkLexargs (conditionalCompilationDefines, lightStatus, Lexhelp.LexResourceManager(0), [], errorLogger, pathMap)
+        let lexargs = mkLexargs (conditionalCompilationDefines, lightStatus, LexResourceManager(0), [], errorLogger, pathMap)
         let lexargs = { lexargs with applyLineDirectives = isCompiling }
 
         let getNextToken =

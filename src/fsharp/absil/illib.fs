@@ -50,7 +50,7 @@ module internal PervasiveAutoOpens =
         // See http://www.mono-project.com/FAQ:_Technical
         // "How can I detect if am running in Mono?" section
         try
-            System.Type.GetType ("Mono.Runtime") <> null
+            Type.GetType "Mono.Runtime" <> null
         with _ ->
             // Must be robust in the case that someone else has installed a handler into System.AppDomain.OnTypeResolveEvent
             // that is not reliable.
@@ -325,7 +325,7 @@ module List =
         | _ -> true
 
     let mapq (f: 'T -> 'T) inp =
-        assert not (typeof<'T>.IsValueType) 
+        assert not typeof<'T>.IsValueType 
         match inp with
         | [] -> inp
         | [h1a] -> 
@@ -400,12 +400,12 @@ module List =
     let rec assoc x l = 
         match l with 
         | [] -> indexNotFound()
-        | ((h, r) :: t) -> if x = h then r else assoc x t
+        | (h, r) :: t -> if x = h then r else assoc x t
 
     let rec memAssoc x l = 
         match l with 
         | [] -> false
-        | ((h, _) :: t) -> x = h || memAssoc x t
+        | (h, _) :: t -> x = h || memAssoc x t
 
     let rec memq x l = 
         match l with 
@@ -622,7 +622,7 @@ module Dictionary =
 
     let inline ofList (xs: ('Key * 'Value) list) = 
         let t = Dictionary<_, _>(List.length xs, HashIdentity.Structural)
-        for (k,v) in xs do
+        for k,v in xs do
            t.Add(k,v)
         t
 
@@ -915,7 +915,7 @@ type LazyWithContext<'T, 'ctxt> =
       /// A helper to ensure we rethrow the "original" exception
       findOriginalException : exn -> exn }
 
-    static member Create(f: ('ctxt->'T), findOriginalException) : LazyWithContext<'T, 'ctxt> = 
+    static member Create(f: 'ctxt->'T, findOriginalException) : LazyWithContext<'T, 'ctxt> = 
         { value = Unchecked.defaultof<'T>
           funcOrException = box f
           findOriginalException = findOriginalException }
@@ -1130,7 +1130,7 @@ module MapAutoOpens =
 
         static member Empty : Map<'Key, 'Value> = Map.empty
 
-        member x.Values = [ for (KeyValue(_, v)) in x -> v ]
+        member x.Values = [ for KeyValue(_, v) in x -> v ]
 
         member x.AddAndMarkAsCollapsible (kvs: _[]) = (x, kvs) ||> Array.fold (fun x (KeyValue(k, v)) -> x.Add(k, v))
 

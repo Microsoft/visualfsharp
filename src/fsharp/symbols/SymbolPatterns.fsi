@@ -87,5 +87,5 @@ module public FSharpSymbolPatterns =
 
     val internal isUnnamedUnionCaseField: FSharpField -> bool
 
-    val internal getEntityAbbreviatedType: FSharpEntity -> (FSharpEntity * FSharpType option)
+    val internal getEntityAbbreviatedType: FSharpEntity -> FSharpEntity * FSharpType option
 

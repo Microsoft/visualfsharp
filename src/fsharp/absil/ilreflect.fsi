@@ -15,7 +15,7 @@ type cenv =
       emitTailcalls: bool
       tryFindSysILTypeRef: string -> ILTypeRef option
       generatePdb: bool
-      resolveAssemblyRef: (ILAssemblyRef -> Choice<string, Assembly> option) }
+      resolveAssemblyRef: ILAssemblyRef -> Choice<string, Assembly> option }
 
 type emEnv
 

@@ -37,7 +37,7 @@ module internal FSharpEnvironment =
     // WARNING: Do not change this revision number unless you absolutely know what you're doing.
     let FSharpBinaryMetadataFormatRevision = "2.0.0.0"
 
-    let isRunningOnCoreClr = (typeof<obj>.Assembly).FullName.StartsWith("System.Private.CoreLib", StringComparison.InvariantCultureIgnoreCase)
+    let isRunningOnCoreClr = typeof<obj>.Assembly.FullName.StartsWith("System.Private.CoreLib", StringComparison.InvariantCultureIgnoreCase)
 
 
 #if !FX_NO_WIN_REGISTRY
@@ -259,7 +259,7 @@ module internal FSharpEnvironment =
         elif typeof<obj>.Assembly.GetName().Name = "System.Private.CoreLib" then
             [| "net5.0"; "netcoreapp3.1"; "netcoreapp3.0"; "netstandard2.1"; "netcoreapp2.2"; "netcoreapp2.1"; "netcoreapp2.0"; "netstandard2.0" |]
         else
-            System.Diagnostics.Debug.Assert(false, "Couldn't determine runtime tooling context, assuming it supports at least .NET Standard 2.0")
+            Debug.Assert(false, "Couldn't determine runtime tooling context, assuming it supports at least .NET Standard 2.0")
             [| "netstandard2.0" |]
 
     let toolPaths = [| "tools"; "typeproviders" |]
@@ -340,7 +340,7 @@ module internal FSharpEnvironment =
                 // never in the GAC these days and  "x.DesignTIme, Version= ..." specifications are never used.
                 try
                     let name = AssemblyName designTimeAssemblyName
-                    Some (Assembly.Load (name))
+                    Some (Assembly.Load name)
                 with e ->
                     raiseError None e
 

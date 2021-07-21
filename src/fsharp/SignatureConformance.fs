@@ -335,9 +335,9 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
                 if implTypars.Length <> sigTypars.Length then (err {denv with showTyparBinding=true} FSComp.SR.ValueNotContainedMutabilityParameterCountsDiffer) else
                 let aenv = aenv.BindEquivTypars implTypars sigTypars 
                 checkTypars m aenv implTypars sigTypars &&
-                if not (typeAEquiv g aenv atau ftau) then err denv (FSComp.SR.ValueNotContainedMutabilityTypesDiffer)
+                if not (typeAEquiv g aenv atau ftau) then err denv FSComp.SR.ValueNotContainedMutabilityTypesDiffer
                 elif not (checkValInfo aenv (err denv) implVal sigVal) then false
-                elif not (implVal.IsExtensionMember = sigVal.IsExtensionMember) then err denv (FSComp.SR.ValueNotContainedMutabilityExtensionsDiffer)
+                elif not (implVal.IsExtensionMember = sigVal.IsExtensionMember) then err denv FSComp.SR.ValueNotContainedMutabilityExtensionsDiffer
                 elif not (checkMemberDatasConform (err denv) (implVal.Attribs, implVal, implVal.MemberInfo) (sigVal.Attribs, sigVal, sigVal.MemberInfo)) then false
                 else checkAttribs aenv implVal.Attribs sigVal.Attribs (fun attribs -> implVal.SetAttribs attribs)              
 
@@ -447,7 +447,7 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
             // and thus compiled representations do pick up dependencies on the field order  
             (if List.forall2 (checkField aenv infoReader enclosingTycon)  implFields sigFields
              then true
-             else (errorR(err (FSComp.SR.ExceptionDefsNotCompatibleFieldOrderDiffers)); false))
+             else (errorR(err FSComp.SR.ExceptionDefsNotCompatibleFieldOrderDiffers); false))
 
         and checkVirtualSlots denv infoReader m (implTycon: Tycon) implAbstractSlots sigAbstractSlots =
             let m1 = NameMap.ofKeyedList (fun (v: ValRef) -> v.DisplayName) implAbstractSlots
@@ -498,26 +498,26 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
               | TProvidedNamespaceExtensionPoint _
 #endif
               ), TNoRepr  -> true
-            | (TFSharpObjectRepr r), TNoRepr  -> 
+            | TFSharpObjectRepr r, TNoRepr  -> 
                 match r.fsobjmodel_kind with 
                 | TTyconStruct | TTyconEnum -> 
                    (errorR (Error(FSComp.SR.DefinitionsInSigAndImplNotCompatibleImplDefinesStruct(implTycon.TypeOrMeasureKind.ToString(), implTycon.DisplayName), m)); false)
                 | _ -> 
                    true
-            | (TAsmRepr _), TNoRepr -> 
+            | TAsmRepr _, TNoRepr -> 
                 (errorR (Error(FSComp.SR.DefinitionsInSigAndImplNotCompatibleDotNetTypeRepresentationIsHidden(implTycon.TypeOrMeasureKind.ToString(), implTycon.DisplayName), m)); false)
-            | (TMeasureableRepr _), TNoRepr -> 
+            | TMeasureableRepr _, TNoRepr -> 
                 (errorR (Error(FSComp.SR.DefinitionsInSigAndImplNotCompatibleTypeIsHidden(implTycon.TypeOrMeasureKind.ToString(), implTycon.DisplayName), m)); false)
-            | (TUnionRepr r1), (TUnionRepr r2) -> 
+            | TUnionRepr r1, TUnionRepr r2 -> 
                 let ucases1 = r1.UnionCasesAsList
                 let ucases2 = r2.UnionCasesAsList
                 if ucases1.Length <> ucases2.Length then
                   let names (l: UnionCase list) = l |> List.map (fun c -> c.Id.idText)
                   reportNiceError "union case" (names ucases1) (names ucases2) 
                 else List.forall2 (checkUnionCase aenv infoReader implTycon) ucases1 ucases2
-            | (TRecdRepr implFields), (TRecdRepr sigFields) -> 
+            | TRecdRepr implFields, TRecdRepr sigFields -> 
                 checkRecordFields m aenv infoReader implTycon implFields sigFields
-            | (TFSharpObjectRepr r1), (TFSharpObjectRepr r2) -> 
+            | TFSharpObjectRepr r1, TFSharpObjectRepr r2 -> 
                 if not (match r1.fsobjmodel_kind, r2.fsobjmodel_kind with 
                          | TTyconClass, TTyconClass -> true
                          | TTyconInterface, TTyconInterface -> true
@@ -540,9 +540,9 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
                   let isStruct = (match r1.fsobjmodel_kind with TTyconStruct -> true | _ -> false)
                   checkClassFields isStruct m aenv infoReader implTycon r1.fsobjmodel_rfields r2.fsobjmodel_rfields &&
                   checkVirtualSlots denv infoReader m implTycon r1.fsobjmodel_vslots r2.fsobjmodel_vslots
-            | (TAsmRepr tcr1),  (TAsmRepr tcr2) -> 
+            | TAsmRepr tcr1,  TAsmRepr tcr2 -> 
                 if tcr1 <> tcr2 then  (errorR (Error(FSComp.SR.DefinitionsInSigAndImplNotCompatibleILDiffer(implTycon.TypeOrMeasureKind.ToString(), implTycon.DisplayName), m)); false) else true
-            | (TMeasureableRepr ty1),  (TMeasureableRepr ty2) -> 
+            | TMeasureableRepr ty1,  TMeasureableRepr ty2 -> 
                 if typeAEquiv g aenv ty1 ty2 then true else (errorR (Error(FSComp.SR.DefinitionsInSigAndImplNotCompatibleRepresentationsDiffer(implTycon.TypeOrMeasureKind.ToString(), implTycon.DisplayName), m)); false)
             | TNoRepr, TNoRepr -> true
 #if !NO_EXTENSIONTYPING
@@ -633,7 +633,7 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
                                          match avs |> List.tryFind (fun av -> valuesPartiallyMatch av fv) with 
                                           | None -> Choice1Of2 fv
                                           | Some av -> Choice2Of2(fv, av))
-                                 for (fv, av) in partialMatchingPairs do
+                                 for fv, av in partialMatchingPairs do
                                      checkVal implModRef aenv infoReader av fv |> ignore
                                  for fv in noMatches do 
                                      sigValHadNoMatchingImplementation fv None

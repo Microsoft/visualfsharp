@@ -305,7 +305,7 @@ type public FSharpCheckFileResults =
     member GetSemanticClassification : range option -> SemanticClassificationItem[]
 
     /// <summary>Get the locations of format specifiers</summary>
-    [<System.Obsolete("This member has been replaced by GetFormatSpecifierLocationsAndArity, which returns both range and arity of specifiers")>]
+    [<Obsolete("This member has been replaced by GetFormatSpecifierLocationsAndArity, which returns both range and arity of specifiers")>]
     member GetFormatSpecifierLocations : unit -> range[]
 
     /// <summary>Get the locations of and number of arguments associated with format specifiers</summary>

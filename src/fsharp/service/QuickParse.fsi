@@ -74,7 +74,7 @@ module public QuickParse =
     val GetCompleteIdentifierIsland : tolerateJustAfter: bool -> tokenText: string -> index: int -> (string * int * bool) option
     
     /// Get the partial long name of the identifier to the left of index.
-    val GetPartialLongName : lineStr: string * index: int -> (string list * string)
+    val GetPartialLongName : lineStr: string * index: int -> string list * string
     
     /// Get the partial long name of the identifier to the left of index.
     /// For example, for `System.DateTime.Now` it returns PartialLongName ([|"System"; "DateTime"|], "Now", Some 32), where "32" pos of the last dot.

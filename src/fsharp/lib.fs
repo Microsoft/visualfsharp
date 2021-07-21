@@ -24,11 +24,11 @@ let mutable progress = false
 let mutable tracking = false
 
 let condition s =
-    try (System.Environment.GetEnvironmentVariable(s) <> null) with _ -> false
+    try (Environment.GetEnvironmentVariable(s) <> null) with _ -> false
 
-let GetEnvInteger e dflt = match System.Environment.GetEnvironmentVariable(e) with null -> dflt | t -> try int t with _ -> dflt
+let GetEnvInteger e dflt = match Environment.GetEnvironmentVariable(e) with null -> dflt | t -> try int t with _ -> dflt
 
-let dispose (x:System.IDisposable) = match x with null -> () | x -> x.Dispose()
+let dispose (x:IDisposable) = match x with null -> () | x -> x.Dispose()
 
 //-------------------------------------------------------------------------
 // Library: bits
@@ -83,13 +83,13 @@ module Check =
     /// If there is a value (e.g. <c>Some(value)</c>) then value is returned.
     let NotNone argName (arg:'T option) : 'T =
         match arg with
-        | None -> raise (new System.InvalidOperationException(argName))
+        | None -> raise (new InvalidOperationException(argName))
         | Some x -> x
 
     /// Throw <cref>System.ArgumentNullException</cref> if argument is <c>null</c>.
     let ArgumentNotNull arg argName =
         match box(arg) with
-        | null -> raise (new System.ArgumentNullException(argName))
+        | null -> raise (new ArgumentNullException(argName))
         | _ -> ()
 
     /// Throw <cref>System.ArgumentNullException</cref> if array argument is <c>null</c>.
@@ -97,14 +97,14 @@ module Check =
     let ArrayArgumentNotNullOrEmpty (arr:'T[]) argName =
         ArgumentNotNull arr argName
         if (0 = arr.Length) then
-            raise (new System.ArgumentOutOfRangeException(argName))
+            raise (new ArgumentOutOfRangeException(argName))
 
     /// Throw <cref>System.ArgumentNullException</cref> if string argument is <c>null</c>.
     /// Throw <cref>System.ArgumentOutOfRangeException</cref> is string argument is empty.
     let StringArgumentNotNullOrEmpty (s:string) argName =
         ArgumentNotNull s argName
         if s.Length = 0 then
-            raise (new System.ArgumentNullException(argName))
+            raise (new ArgumentNullException(argName))
 
 //-------------------------------------------------------------------------
 // Library
@@ -166,20 +166,20 @@ module ListSet =
     let rec private findIndexAux eq x l n =
         match l with
         | [] -> notFound()
-        | (h :: t) -> if eq h x then n else findIndexAux eq x t (n+1)
+        | h :: t -> if eq h x then n else findIndexAux eq x t (n+1)
 
     /// NOTE: O(n)!
     let findIndex eq x l = findIndexAux eq x l 0
 
     let rec remove f x l =
         match l with
-        | (h :: t) -> if f x h then t else h :: remove f x t
+        | h :: t -> if f x h then t else h :: remove f x t
         | [] -> []
 
     /// NOTE: quadratic!
     let rec subtract f l1 l2 =
       match l2 with
-      | (h :: t) -> subtract f (remove (fun y2 y1 -> f y1 y2) h l1) t
+      | h :: t -> subtract f (remove (fun y2 y1 -> f y1 y2) h l1) t
       | [] -> l1
 
     let isSubsetOf f l1 l2 = List.forall (fun x1 -> contains f x1 l2) l1
@@ -198,7 +198,7 @@ module ListSet =
     /// NOTE: not tail recursive!
     let rec intersect f l1 l2 =
         match l2 with
-        | (h :: t) -> if contains f h l1 then h :: intersect f l1 t else intersect f l1 t
+        | h :: t -> if contains f h l1 then h :: intersect f l1 t else intersect f l1 t
         | [] -> []
 
     /// Note: if duplicates appear, keep the ones toward the _front_ of the list
@@ -335,7 +335,7 @@ let writeViaBuffer (os: TextWriter) f x =
 type GraphNode<'Data, 'Id> = { nodeId: 'Id; nodeData: 'Data; mutable nodeNeighbours: GraphNode<'Data, 'Id> list }
 
 type Graph<'Data, 'Id when 'Id : comparison and 'Id : equality>
-         (nodeIdentity: ('Data -> 'Id),
+         (nodeIdentity: 'Data -> 'Id,
           nodes: 'Data list,
           edges: ('Data * 'Data) list) =
 
@@ -474,7 +474,7 @@ module internal AsyncUtil =
             // Run continuations outside the lock
             match grabbedConts with
             |   [] -> ()
-            |   [(sc, cont) as c] ->
+            |   [sc, cont as c] ->
                     if SynchronizationContext.Current = sc then
                         cont res
                     else
@@ -532,8 +532,8 @@ module UnmanagedProcessExecutionOptions =
     // Translation of C# from http://swikb/v1/DisplayOnlineDoc.aspx?entryID=826 and copy in bug://5018
     [<System.Security.Permissions.SecurityPermission(System.Security.Permissions.SecurityAction.Assert, UnmanagedCode = true)>]
     let EnableHeapTerminationOnCorruption() =
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) &&  System.Environment.OSVersion.Version.Major >= 6 && // If OS is Vista or higher
-            System.Environment.Version.Major < 3) then // and CLR not 3.0 or higher
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) &&  Environment.OSVersion.Version.Major >= 6 && // If OS is Vista or higher
+            Environment.Version.Major < 3) then // and CLR not 3.0 or higher
             // "The flag HeapSetInformation sets is available in Windows XP SP3 and later.
             //  The data structure used for heap information is available on earlier versions of Windows.
             //  The call will either return TRUE (found and set the flag) or false (flag not found).

@@ -186,7 +186,7 @@ let parseFormatStringInternal (m: range) (fragRanges: range list) (g: TcGlobals)
        
        // Check if we've moved into the next fragment.  Note this will always activate on
        // the first step, i.e. when i=0
-       let (struct (fragLine, fragCol, fragments)) =
+       let struct (fragLine, fragCol, fragments) =
            match fragments with 
            | (idx, fragOffset, fragRange: range)::rest when i >= idx  ->
                //printfn "i = %d, idx = %d, moving into next fragment at %A plus fragOffset %d" i idx fragRange fragOffset
@@ -203,7 +203,7 @@ let parseFormatStringInternal (m: range) (fragRanges: range list) (g: TcGlobals)
                    failwithf "%s" <| FSComp.SR.forPositionalSpecifiersNotPermitted()
            argtys
        elif System.Char.IsSurrogatePair(fmt,i) then 
-          appendToDotnetFormatString (fmt.[i..i+1])
+          appendToDotnetFormatString fmt.[i..i+1]
           parseLoop acc (i+2, fragLine, fragCol+2) fragments
        else 
           let c = fmt.[i]
@@ -366,14 +366,14 @@ let parseFormatStringInternal (m: range) (fragRanges: range list) (g: TcGlobals)
                   appendToDotnetFormatString "%"
                   parseLoop acc (i+1, fragLine, fragCol+1) fragments
 
-              | ('d' | 'i' | 'u' | 'B' | 'o' | 'x' | 'X') ->
+              | 'd' | 'i' | 'u' | 'B' | 'o' | 'x' | 'X' ->
                   if ch = 'B' then ErrorLogger.checkLanguageFeatureError g.langVersion Features.LanguageFeature.PrintfBinaryFormat m
                   if info.precision then failwithf "%s" <| FSComp.SR.forFormatDoesntSupportPrecision(ch.ToString())
                   collectSpecifierLocation fragLine fragCol 1
                   let i = skipPossibleInterpolationHole (i+1)
                   parseLoop ((posi, mkFlexibleIntFormatTypar g m) :: acc) (i, fragLine, fragCol+1) fragments
 
-              | ('l' | 'L') ->
+              | 'l' | 'L' ->
                   if info.precision then failwithf "%s" <| FSComp.SR.forFormatDoesntSupportPrecision(ch.ToString())
                   let fragCol = fragCol+1
                   let i = i+1
@@ -384,13 +384,13 @@ let parseFormatStringInternal (m: range) (fragRanges: range list) (g: TcGlobals)
                   // Always error for %l and %Lx
                   failwithf "%s" <| FSComp.SR.forLIsUnnecessary()
                   match fmt.[i] with
-                  | ('d' | 'i' | 'o' | 'u' | 'x' | 'X') -> 
+                  | 'd' | 'i' | 'o' | 'u' | 'x' | 'X' -> 
                       collectSpecifierLocation fragLine fragCol 1
                       let i = skipPossibleInterpolationHole (i+1)
                       parseLoop ((posi, mkFlexibleIntFormatTypar g m) :: acc)  (i, fragLine, fragCol+1) fragments
                   | _ -> failwithf "%s" <| FSComp.SR.forBadFormatSpecifier()
 
-              | ('h' | 'H') ->
+              | 'h' | 'H' ->
                   failwithf "%s" <| FSComp.SR.forHIsUnnecessary()
 
               | 'M' ->
@@ -398,7 +398,7 @@ let parseFormatStringInternal (m: range) (fragRanges: range list) (g: TcGlobals)
                   let i = skipPossibleInterpolationHole (i+1)
                   parseLoop ((posi, mkFlexibleDecimalFormatTypar g m) :: acc) (i, fragLine, fragCol+1) fragments
 
-              | ('f' | 'F' | 'e' | 'E' | 'g' | 'G') ->
+              | 'f' | 'F' | 'e' | 'E' | 'g' | 'G' ->
                   collectSpecifierLocation fragLine fragCol 1
                   let i = skipPossibleInterpolationHole (i+1)
                   parseLoop ((posi, mkFlexibleFloatFormatTypar g m) :: acc) (i, fragLine, fragCol+1) fragments

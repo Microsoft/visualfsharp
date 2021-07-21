@@ -62,7 +62,7 @@ type public FsiEvaluationSessionHostConfig =
     abstract FloatingPointFormat: string 
 
     /// Called by the evaluation session to ask the host for parameters to format text for output
-    abstract AddedPrinters: Choice<(Type * (obj -> string)), (Type * (obj -> obj))>  list
+    abstract AddedPrinters: Choice<Type * (obj -> string), Type * (obj -> obj)>  list
 
     /// Called by the evaluation session to ask the host for parameters to format text for output
     abstract ShowDeclarationValues: bool  
@@ -343,8 +343,8 @@ module Settings =
         /// <summary>Register a print transformer that controls the output of the interactive session.</summary>
         member AddPrintTransformer: ('T -> obj) -> unit
 
-        member internal AddedPrinters: Choice<(Type * (obj -> string)), 
-                                               (Type * (obj -> obj))>  list
+        member internal AddedPrinters: Choice<Type * (obj -> string), 
+                                               Type * (obj -> obj)>  list
 
     
         /// <summary>The command line arguments after ignoring the arguments relevant to the interactive

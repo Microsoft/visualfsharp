@@ -16,11 +16,11 @@ type NamedTypeData =
 
 val mkVarTy : int -> TypeData 
 
-val mkFunTy : (TypeData * TypeData) -> TypeData
+val mkFunTy : TypeData * TypeData -> TypeData
 
-val mkArrayTy : (int * TypeData ) -> TypeData 
+val mkArrayTy : int * TypeData -> TypeData 
 
-val mkILNamedTy : (NamedTypeData * TypeData list) -> TypeData 
+val mkILNamedTy : NamedTypeData * TypeData list -> TypeData 
 
 type ExprData
 

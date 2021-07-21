@@ -64,7 +64,7 @@ type internal AgedLookup<'Token, 'Key, 'Value when 'Value : not struct>(keepStro
     /// Remove weak entries from the list that have been collected.
     let FilterAndHold(tok: 'Token) =
         ignore tok // reading 'refs' requires a token
-        [ for (key,value) in refs do
+        [ for key,value in refs do
             match value with
             | Strong(value) -> yield (key,value)
             | Weak(weakReference) ->

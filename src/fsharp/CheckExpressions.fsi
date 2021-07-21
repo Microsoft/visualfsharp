@@ -104,7 +104,7 @@ type TcEnv =
     } 
 
     member DisplayEnv : DisplayEnv
-    member NameEnv : NameResolution.NameResolutionEnv
+    member NameEnv : NameResolutionEnv
     member AccessRights : AccessorDomain
 
 //-------------------------------------------------------------------------
@@ -178,7 +178,7 @@ type TcFileState =
       /// Push an entry every time a recursive value binding is used, 
       /// in order to be able to fix up recursive type applications as 
       /// we infer type parameters 
-      mutable recUses: ValMultiMap<(Expr ref * range * bool)>
+      mutable recUses: ValMultiMap<Expr ref * range * bool>
       
       /// Checks to run after all inference is complete. 
       mutable postInferenceChecks: ResizeArray<unit -> unit>
@@ -190,7 +190,7 @@ type TcFileState =
       isScript: bool 
 
       /// Environment needed to convert IL types to F# types in the importer. 
-      amap: Import.ImportMap 
+      amap: ImportMap 
 
       /// Used to generate new syntactic argument names in post-parse syntactic processing
       synArgNameGenerator: SynArgNameGenerator
@@ -511,7 +511,7 @@ val unionGeneralizedTypars: typarSets:Typar list list -> Typar list
 val AddDeclaredTypars: check: CheckForDuplicateTyparFlag -> typars: Typar list -> env: TcEnv -> TcEnv
 
 /// Add a value to the environment, producing a new environment. Report to the sink.
-val AddLocalVal: g: TcGlobals -> NameResolution.TcResultsSink -> scopem: range -> v: Val -> TcEnv -> TcEnv
+val AddLocalVal: g: TcGlobals -> TcResultsSink -> scopem: range -> v: Val -> TcEnv -> TcEnv
 
 /// Add a value to the environment, producing a new environment
 val AddLocalValPrimitive: g: TcGlobals -> v: Val -> TcEnv -> TcEnv
@@ -600,7 +600,7 @@ val MakeAndPublishVal: cenv: TcFileState -> env: TcEnv -> altActualParent: Paren
 val MakeAndPublishBaseVal: cenv: TcFileState -> env: TcEnv -> Ident option -> TType -> Val option
 
 /// Make simple values (which are not recursive nor members)
-val MakeAndPublishSimpleVals: cenv: TcFileState -> env: TcEnv -> names: NameMap<PrelimValScheme1> -> NameMap<(Val * TypeScheme)> * NameMap<Val>
+val MakeAndPublishSimpleVals: cenv: TcFileState -> env: TcEnv -> names: NameMap<PrelimValScheme1> -> NameMap<Val * TypeScheme> * NameMap<Val>
 
 /// Make an initial implicit safe initialization value
 val MakeAndPublishSafeThisVal: cenv: TcFileState -> env: TcEnv -> thisIdOpt: Ident option -> thisTy: TType -> Val option

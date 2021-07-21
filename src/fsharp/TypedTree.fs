@@ -468,7 +468,7 @@ exception UndefinedName of
     depth: int * 
     error: (string -> string) * 
     id: Ident * 
-    suggestions: ErrorLogger.Suggestions
+    suggestions: Suggestions
 
 exception InternalUndefinedItemRef of (string * string * string -> int * string) * string * string * string
 
@@ -668,7 +668,7 @@ type Entity =
 #if !NO_EXTENSIONTYPING
     member x.IsStaticInstantiationTycon = 
         x.IsProvidedErasedTycon &&
-            let _nm, args = PrettyNaming.demangleProvidedTypeName x.LogicalName
+            let _nm, args = demangleProvidedTypeName x.LogicalName
             args.Length > 0 
 #endif
 
@@ -691,7 +691,7 @@ type Entity =
 
 #if !NO_EXTENSIONTYPING
         if x.IsProvidedErasedTycon then 
-            let nm, args = PrettyNaming.demangleProvidedTypeName nm
+            let nm, args = demangleProvidedTypeName nm
             if withStaticParameters && args.Length > 0 then 
                 nm + "<" + String.concat "," (Array.map snd args) + ">"
             else
@@ -1188,7 +1188,7 @@ type Entity =
         // and also for types with relocation suppressed.
         | TProvidedTypeExtensionPoint info when info.IsGenerated && info.IsSuppressRelocate -> 
             let st = info.ProvidedType
-            let tref = ExtensionTyping.GetILTypeRefOfProvidedType (st, x.Range)
+            let tref = GetILTypeRefOfProvidedType (st, x.Range)
             let boxity = if x.IsStructOrEnumTycon then AsValue else AsObject
             CompiledTypeRepr.ILAsmNamed(tref, boxity, None)
         | TProvidedNamespaceExtensionPoint _ -> failwith "No compiled representation for provided namespace"
@@ -1219,7 +1219,7 @@ type Entity =
                     let boxity = if x.IsStructOrEnumTycon then AsValue else AsObject
                     let ilTypeRef = 
                         match x.TypeReprInfo with 
-                        | TILObjectRepr (TILObjectReprData(ilScopeRef, ilEnclosingTypeDefs, ilTypeDef)) -> IL.mkRefForNestedILTypeDef ilScopeRef (ilEnclosingTypeDefs, ilTypeDef)
+                        | TILObjectRepr (TILObjectReprData(ilScopeRef, ilEnclosingTypeDefs, ilTypeDef)) -> mkRefForNestedILTypeDef ilScopeRef (ilEnclosingTypeDefs, ilTypeDef)
                         | _ -> ilTypeRefForCompilationPath x.CompilationPath x.CompiledName
                     // Pre-allocate a ILType for monomorphic types, to reduce memory usage from Abstract IL nodes
                     let ilTypeOpt = 
@@ -1399,7 +1399,7 @@ type TyconRepresentation =
     /// Indicates the representation information for a provided namespace.  
     //
     // Note, the list could probably be a list of IProvidedNamespace rather than ITypeProvider
-    | TProvidedNamespaceExtensionPoint of ExtensionTyping.ResolutionEnvironment * Tainted<ITypeProvider> list
+    | TProvidedNamespaceExtensionPoint of ResolutionEnvironment * Tainted<ITypeProvider> list
 #endif
 
     /// The 'NoRepr' value here has four meanings: 
@@ -1465,11 +1465,11 @@ type TProvidedTypeInfo =
 
       /// A type read from the provided type and used to compute basic properties of the type definition.
       /// Reading is delayed, since it does an import on the underlying type
-      UnderlyingTypeOfEnum: (unit -> TType) 
+      UnderlyingTypeOfEnum: unit -> TType 
 
       /// A flag read from the provided type and used to compute basic properties of the type definition.
       /// Reading is delayed, since it looks at the .BaseType
-      IsDelegate: (unit -> bool) 
+      IsDelegate: unit -> bool 
 
       /// Indicates the type is erased
       IsErased: bool 
@@ -3122,9 +3122,9 @@ type NonLocalEntityRef =
                     [ for resolver in resolvers do
                         let moduleOrNamespace = if j = 0 then null else path.[0..j-1]
                         let typename = path.[j]
-                        let resolution = ExtensionTyping.TryLinkProvidedType(resolver, moduleOrNamespace, typename, m)
+                        let resolution = TryLinkProvidedType(resolver, moduleOrNamespace, typename, m)
                         match resolution with
-                        | None | Some (Tainted.Null) -> ()
+                        | None | Some Tainted.Null -> ()
                         | Some st -> yield (resolver, st) ]
                 match matched with
                 | [(_, st)] ->
@@ -4645,7 +4645,7 @@ type Expr =
         | Let (bind, body, _, _) -> "Let(" + bind.Var.DisplayName + ", " + bind.Expr.ToDebugString(depth) + ", " + body.ToDebugString(depth) + ")"
         | Obj (_, _objTy, _, _, _, _, _) -> "Obj(..)"
         | Match (_, _, _dt, _tgs, _, _) -> "Match(..)"
-        | StaticOptimization (_, _, _, _) -> "StaticOptimization(..)"
+        | StaticOptimization _ -> "StaticOptimization(..)"
         | Op (op, _, args, _) -> "Op(" + op.ToString() + ", " + String.concat ", " (args |> List.map (fun e -> e.ToDebugString(depth))) + ")"
         | Quote _ -> "Quote(..)"
         | WitnessArg _  -> "WitnessArg(..)"
@@ -5061,7 +5061,7 @@ type TypedImplFile =
 [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
 type TypedImplFileAfterOptimization = 
     { ImplFile: TypedImplFile 
-      OptimizeDuringCodeGen: (bool -> Expr -> Expr) }
+      OptimizeDuringCodeGen: bool -> Expr -> Expr }
 
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member x.DebugText = x.ToString()
@@ -5120,11 +5120,11 @@ type CcuData =
       
       /// A helper function used to link method signatures using type equality. This is effectively a forward call to the type equality 
       /// logic in tastops.fs
-      TryGetILModuleDef: (unit -> ILModuleDef option) 
+      TryGetILModuleDef: unit -> ILModuleDef option 
       
       /// A helper function used to link method signatures using type equality. This is effectively a forward call to the type equality 
       /// logic in tastops.fs
-      MemberSignatureEquality: (TType -> TType -> bool) 
+      MemberSignatureEquality: TType -> TType -> bool 
       
       /// The table of .NET CLI type forwarders for this assembly
       TypeForwarders: CcuTypeForwarderTable
@@ -5180,7 +5180,7 @@ type CcuThunk =
     /// Ensure the ccu is derefable in advance. Supply a path to attach to any resulting error message.
     member ccu.EnsureDerefable(requiringPath: string[]) = 
         if ccu.IsUnresolvedReference then 
-            let path = System.String.Join(".", requiringPath)
+            let path = String.Join(".", requiringPath)
             raise(UnresolvedPathReferenceNoRange(ccu.name, path))
             
     /// Indicates that this DLL uses F# 2.0+ quotation literals somewhere. This is used to implement a restriction on static linking.
@@ -5436,7 +5436,7 @@ type Construct() =
                       match baseSystemTy with 
                       | None -> objTy 
                       | Some t -> importProvidedType t),
-                  ErrorLogger.findOriginalException)
+                  findOriginalException)
 
         TProvidedTypeExtensionPoint 
             { ResolutionEnvironment=resolutionEnvironment
@@ -5480,7 +5480,7 @@ type Construct() =
             match cpath with 
             | None -> 
                 let ilScopeRef = st.TypeProviderAssemblyRef
-                let enclosingName = ExtensionTyping.GetFSharpPathToProvidedType(st, m)
+                let enclosingName = GetFSharpPathToProvidedType(st, m)
                 CompPath(ilScopeRef, enclosingName |> List.map(fun id->id, ModuleOrNamespaceKind.Namespace))
             | Some p -> p
         let pubpath = cpath.NestedPublicPath id
@@ -5721,6 +5721,6 @@ type Construct() =
             // Coordinates from type provider are 1-based for lines and columns
             // Coordinates internally in the F# compiler are 1-based for lines and 0-based for columns
             let pos = Position.mkPos line (max 0 (column - 1)) 
-            Range.mkRange filePath pos pos |> Some
+            mkRange filePath pos pos |> Some
 #endif
 

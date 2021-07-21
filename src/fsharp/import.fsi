@@ -82,4 +82,4 @@ val internal ImportILGenericParameters : (unit -> ImportMap) -> range -> ILScope
 val internal ImportILAssembly : (unit -> ImportMap) * range * (ILScopeRef -> ILModuleDef) * IXmlDocumentationInfoLoader option * ILScopeRef * sourceDir:string * filename: string option * ILModuleDef * IEvent<string> -> CcuThunk
 
 /// Import the type forwarder table for an IL assembly
-val internal ImportILAssemblyTypeForwarders : (unit -> ImportMap) * range * ILExportedTypesAndForwarders -> Map<(string array * string), Lazy<EntityRef>>
+val internal ImportILAssemblyTypeForwarders : (unit -> ImportMap) * range * ILExportedTypesAndForwarders -> Map<string array * string, Lazy<EntityRef>>

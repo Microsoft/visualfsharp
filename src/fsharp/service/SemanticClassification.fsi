@@ -60,7 +60,7 @@ type SemanticClassificationItem =
 /// Extension methods for the TcResolutions type.
 [<AutoOpen>]
 module internal TcResolutionsExtensions =
-    val (|CNR|) : cnr: CapturedNameResolution -> (Item * ItemOccurence * DisplayEnv * NameResolutionEnv * AccessorDomain * range)
+    val (|CNR|) : cnr: CapturedNameResolution -> Item * ItemOccurence * DisplayEnv * NameResolutionEnv * AccessorDomain * range
 
     type TcResolutions with
         member GetSemanticClassification: g: TcGlobals * amap: ImportMap * formatSpecifierLocations: (range * int) [] * range: range option -> SemanticClassificationItem []

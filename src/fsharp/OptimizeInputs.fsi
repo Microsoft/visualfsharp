@@ -19,11 +19,11 @@ val GetInitialOptimizationEnv : TcImports * TcGlobals -> IncrementalOptimization
 
 val AddExternalCcuToOptimizationEnv : TcGlobals -> IncrementalOptimizationEnv -> ImportedAssembly -> IncrementalOptimizationEnv
 
-val ApplyAllOptimizations : TcConfig * TcGlobals * ConstraintSolver.TcValF * string * ImportMap * bool * IncrementalOptimizationEnv * CcuThunk * TypedImplFile list -> TypedAssemblyAfterOptimization * Optimizer.LazyModuleInfo * IncrementalOptimizationEnv 
+val ApplyAllOptimizations : TcConfig * TcGlobals * ConstraintSolver.TcValF * string * ImportMap * bool * IncrementalOptimizationEnv * CcuThunk * TypedImplFile list -> TypedAssemblyAfterOptimization * LazyModuleInfo * IncrementalOptimizationEnv 
 
 val CreateIlxAssemblyGenerator : TcConfig * TcImports * TcGlobals * ConstraintSolver.TcValF * CcuThunk -> IlxAssemblyGenerator
 
-val GenerateIlxCode : IlxGen.IlxGenBackend * isInteractiveItExpr:bool * isInteractiveOnMono:bool * TcConfig * TopAttribs * TypedAssemblyAfterOptimization * fragName:string * IlxGen.IlxAssemblyGenerator -> IlxGenResults
+val GenerateIlxCode : IlxGenBackend * isInteractiveItExpr:bool * isInteractiveOnMono:bool * TcConfig * TopAttribs * TypedAssemblyAfterOptimization * fragName:string * IlxAssemblyGenerator -> IlxGenResults
 
 // Used during static linking
 val NormalizeAssemblyRefs : CompilationThreadToken * ILGlobals * TcImports -> (ILScopeRef -> ILScopeRef)

@@ -176,7 +176,7 @@ type internal MemoryMappedStream(mmf: MemoryMappedFile, length: int64) =
     override x.CanRead = viewStream.CanRead
     override x.CanWrite = viewStream.CanWrite
     override x.CanSeek = viewStream.CanSeek
-    override x.Position with get() = viewStream.Position and set v = (viewStream.Position <- v)
+    override x.Position with get() = viewStream.Position and set v = viewStream.Position <- v
     override x.Length = viewStream.Length
     override x.Flush() = viewStream.Flush()
     override x.Seek(offset, origin) = viewStream.Seek(offset, origin)
@@ -380,7 +380,7 @@ module internal FileSystemUtils =
         checkPathForIllegalChars s
         if s = "." then "" else // for OCaml compatibility
         if not (hasExtensionWithValidate false s) then
-            raise (System.ArgumentException("chopExtension")) // message has to be precisely this, for OCaml compatibility, and no argument name can be set
+            raise (ArgumentException("chopExtension")) // message has to be precisely this, for OCaml compatibility, and no argument name can be set
         Path.Combine (Path.GetDirectoryName s, Path.GetFileNameWithoutExtension(s))
 
     let fileNameOfPath s =
@@ -627,7 +627,7 @@ type DefaultFileSystem() as this =
 [<AutoOpen>]
 module public StreamExtensions =
     let utf8noBOM = new UTF8Encoding(false, true) :> Encoding
-    type System.IO.Stream with
+    type Stream with
         member s.GetWriter(?encoding: Encoding) : TextWriter =
             let encoding = defaultArg encoding utf8noBOM
             new StreamWriter(s, encoding) :> TextWriter
@@ -663,7 +663,7 @@ module public StreamExtensions =
                        //   FileLoadException
                        //   PathTooLongException
                        if retryNumber < numRetries then
-                           System.Threading.Thread.Sleep (retryDelayMilliseconds)
+                           Thread.Sleep retryDelayMilliseconds
                            getSource (retryNumber + 1)
                        else
                            reraise()

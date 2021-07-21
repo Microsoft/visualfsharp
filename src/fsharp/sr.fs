@@ -23,7 +23,7 @@ namespace FSharp.Compiler
         let mkFunctionValue (tys: System.Type[]) (impl:obj->obj) = 
             FSharpValue.MakeFunction(FSharpType.MakeFunctionType(tys.[0],tys.[1]), impl)
 
-        let funTyC = typeof<(obj -> obj)>.GetGenericTypeDefinition()  
+        let funTyC = typeof<obj -> obj>.GetGenericTypeDefinition()  
         let mkFunTy a b = funTyC.MakeGenericType([| a;b |])
 
         let isNamedType(ty:System.Type) = not (ty.IsArray ||  ty.IsByRef ||  ty.IsPointer)
@@ -80,13 +80,13 @@ namespace FSharp.Compiler
                     | _ ->
                         capture args ty (i+1) 
 
-            (unbox (capture [] (typeof<'T>) 0) : 'T)
+            (unbox (capture [] typeof<'T> 0) : 'T)
 
         type ResourceString<'T>(fmtString : string, fmt : Printf.StringFormat<'T>) =
             member a.Format =
                 createMessageString fmtString fmt
 
-        let DeclareResourceString ((messageID : string),(fmt : Printf.StringFormat<'T>)) =
+        let DeclareResourceString (messageID : string,fmt : Printf.StringFormat<'T>) =
             let mutable messageString = SR.GetString(messageID)
 #if DEBUG
             // validate that the message string exists
@@ -112,7 +112,7 @@ namespace FSharp.Compiler
                             pos' <- pos' + 1
                         if pos' > pos+1 && s.[pos'] = '}' then
                             nHoles <- nHoles + 1
-                            let ordern = (int) (s.[(pos+1) .. (pos'-1)])
+                            let ordern = int s.[(pos+1) .. (pos'-1)]
                             order <- order.Add(ordern)
                             pos <- pos'
                     pos <- pos + 1

@@ -268,7 +268,7 @@ let tester2: int Group = []
                 let symbolUse = findSymbolUseByName entityName checkResults
                 match symbolUse.Symbol with
                 | :? FSharpMemberOrFunctionOrValue as v ->
-                        v.FullType.Format (symbolUse.DisplayContext)
+                        v.FullType.Format symbolUse.DisplayContext
                         |> should equal expectedTypeFormat
                 | _ -> Assert.Fail (sprintf "Couldn't get member: %s" entityName)
             )

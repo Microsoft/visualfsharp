@@ -26,7 +26,7 @@ module SurfaceArea =
 
         // get local FSharp.CompilerService
         let path = Path.Combine(Path.GetDirectoryName(typeof<int list>.Assembly.Location), "FSharp.Compiler.Service.dll")
-        let name = AssemblyName.GetAssemblyName (path)
+        let name = AssemblyName.GetAssemblyName path
         let asm = Assembly.Load(name)
 
         // public types only
@@ -47,7 +47,7 @@ module SurfaceArea =
                     yield! ti.DeclaredNestedTypes   |> Seq.filter (fun ty -> ty.IsNestedPublic) |> Seq.map cast
                 } |> Array.ofSeq
 
-            [| for (ty,m) in getMembers t do
+            [| for ty,m in getMembers t do
                   yield sprintf "%s: %s" (ty.ToString()) (m.ToString())
                if not t.IsNested then
                    yield t.ToString()

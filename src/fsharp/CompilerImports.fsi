@@ -111,9 +111,9 @@ type ImportedAssembly =
       AssemblyInternalsVisibleToAttributes: string list
 #if !NO_EXTENSIONTYPING
       IsProviderGenerated: bool
-      mutable TypeProviders: Tainted<Microsoft.FSharp.Core.CompilerServices.ITypeProvider> list
+      mutable TypeProviders: Tainted<ITypeProvider> list
 #endif
-      FSharpOptimizationData: Lazy<Option<Optimizer.LazyModuleInfo>>
+      FSharpOptimizationData: Lazy<Option<LazyModuleInfo>>
     }
 
 
@@ -141,7 +141,7 @@ type RawFSharpAssemblyData =
 /// Otherwise, simply allow the GC to collect this and it will properly call Dispose from the finalizer.
 [<Sealed>] 
 type TcImports =
-    interface System.IDisposable
+    interface IDisposable
     //new: TcImports option -> TcImports
     member DllTable: NameMap<ImportedBinary> with get
 

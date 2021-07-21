@@ -70,7 +70,7 @@ type ILVersionInfo =
 type ILAssemblyRef =
     static member Create: name: string * hash: byte[] option * publicKey: PublicKey option * retargetable: bool * version: ILVersionInfo option * locale: string option -> ILAssemblyRef
 
-    static member FromAssemblyName: System.Reflection.AssemblyName -> ILAssemblyRef
+    static member FromAssemblyName: AssemblyName -> ILAssemblyRef
 
     member Name: string
 
@@ -603,7 +603,7 @@ type internal ILExceptionClause =
 
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
 type internal ILExceptionSpec =
-    { Range: (ILCodeLabel * ILCodeLabel)
+    { Range: ILCodeLabel * ILCodeLabel
       Clause: ILExceptionClause }
 
 /// Indicates that a particular local variable has a particular source
@@ -616,7 +616,7 @@ type internal ILLocalDebugMapping =
 
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
 type internal ILLocalDebugInfo =
-    { Range: (ILCodeLabel * ILCodeLabel);
+    { Range: ILCodeLabel * ILCodeLabel;
       DebugMappings: ILLocalDebugMapping list }
 
 [<RequireQualifiedAccess; NoEquality; NoComparison>]

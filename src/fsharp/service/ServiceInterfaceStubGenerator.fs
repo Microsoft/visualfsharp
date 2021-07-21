@@ -370,10 +370,10 @@ module InterfaceStubGenerator =
 
         match m with
         | MemberInfo.PropertyGetSet(getter, setter) ->
-            let (usage, modifiers, getterArgInfos, retType) = preprocess ctx getter
+            let usage, modifiers, getterArgInfos, retType = preprocess ctx getter
             let closeDeclaration = closeDeclaration retType
             let writeImplementation = writeImplementation ctx
-            let (_, _, setterArgInfos, _) = preprocess ctx setter
+            let _, _, setterArgInfos, _ = preprocess ctx setter
             let writer = ctx.Writer
             writer.Write("member ")
             for modifier in modifiers do
@@ -400,7 +400,7 @@ module InterfaceStubGenerator =
             writer.Unindent ctx.Indentation
 
         | MemberInfo.Member v ->
-            let (usage, modifiers, argInfos, retType) = preprocess ctx v
+            let usage, modifiers, argInfos, retType = preprocess ctx v
             let closeDeclaration = closeDeclaration retType
             let writeImplementation = writeImplementation ctx
             let writer = ctx.Writer
@@ -497,7 +497,7 @@ module InterfaceStubGenerator =
     /// Get members in the decreasing order of inheritance chain
     let GetInterfaceMembers (entity: FSharpEntity) = 
         seq {
-            for (iface, instantiations) in getInterfaces entity do
+            for iface, instantiations in getInterfaces entity do
                 yield! iface.TryGetMembersFunctionsAndValues()
                        |> Seq.choose (fun m -> 
                            // Use this hack when FCS doesn't return enough information on .NET properties and events
@@ -543,7 +543,7 @@ module InterfaceStubGenerator =
             []
         | InterfaceData.Interface(_, Some memberDefns) -> 
             memberDefns
-            |> Seq.choose (function (SynMemberDefn.Member(binding, _)) -> Some binding | _ -> None)
+            |> Seq.choose (function SynMemberDefn.Member(binding, _) -> Some binding | _ -> None)
             |> Seq.choose (|MemberNameAndRange|_|)
             |> Seq.toList
         | InterfaceData.ObjExpr(_, bindings) -> 
@@ -854,7 +854,7 @@ module InterfaceStubGenerator =
                     | None ->
                         List.tryPick walkExpr [synExpr1; synExpr2]
 
-                | SynExpr.Ident (_ident) ->
+                | SynExpr.Ident _ident ->
                     None
 
                 | SynExpr.LongIdent (_, _longIdent, _altNameRefCell, _range) -> 
@@ -901,8 +901,8 @@ module InterfaceStubGenerator =
                 | SynExpr.TraitCall (_synTyparList, _synMemberSig, synExpr, _range) ->
                     walkExpr synExpr
 
-                | SynExpr.Null (_range)
-                | SynExpr.ImplicitZero (_range) -> 
+                | SynExpr.Null _range
+                | SynExpr.ImplicitZero _range -> 
                     None
 
                 | SynExpr.YieldOrReturn (_, synExpr, _range)
@@ -913,7 +913,7 @@ module InterfaceStubGenerator =
                 | SynExpr.LetOrUseBang (_sequencePointInfoForBinding, _, _, _synPat, synExpr1, synExprAndBangs, synExpr2, _range) -> 
                     [
                         yield synExpr1
-                        for (_,_,_,_,eAndBang,_) in synExprAndBangs do
+                        for _,_,_,_,eAndBang,_ in synExprAndBangs do
                             yield eAndBang
                         yield synExpr2
                     ]

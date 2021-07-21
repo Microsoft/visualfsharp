@@ -44,7 +44,7 @@ module internal ParameterLocationsImpl =
     let rec digOutIdentFromFuncExpr synExpr =
         // we found it, dig out ident
         match synExpr with
-        | SynExpr.Ident (id) -> Some ([id.idText], id.idRange)
+        | SynExpr.Ident id -> Some ([id.idText], id.idRange)
         | SynExpr.LongIdent (_, LongIdentWithDots(lid, _), _, lidRange) 
         | SynExpr.DotGet (_, _, LongIdentWithDots(lid, _), lidRange) -> Some (pathOfLid lid, lidRange)
         | SynExpr.TypeApp (synExpr, _, _synTypeList, _commas, _, _, _range) -> digOutIdentFromFuncExpr synExpr 
@@ -78,7 +78,7 @@ module internal ParameterLocationsImpl =
                         _, _) when op.idText="op_Equality" -> Some n.idText
         | _ -> None
 
-    let getTypeName(synType) =
+    let getTypeName synType =
         match synType with
         | SynType.LongIdent(LongIdentWithDots(ids, _)) -> ids |> pathOfLid
         | _ -> [""] // TODO type name for other cases, see also unit test named "ParameterInfo.LocationOfParams.AfterQuicklyTyping.CallConstructorViaLongId.Bug94333"
@@ -100,7 +100,7 @@ module internal ParameterLocationsImpl =
     // see bug 345385.
     let rec searchSynArgExpr traverseSynExpr pos expr =
         match expr with 
-        | SynExprParen((SynExpr.Tuple (false, synExprList, commaRanges, _tupleRange) as synExpr), _lpRange, rpRangeOpt, parenRange) -> // tuple argument
+        | SynExprParen(SynExpr.Tuple (false, synExprList, commaRanges, _tupleRange) as synExpr, _lpRange, rpRangeOpt, parenRange) -> // tuple argument
             let inner = traverseSynExpr synExpr
             match inner with
             | None ->
@@ -289,9 +289,9 @@ module internal SynExprAppLocationsImpl =
                     loop t (h.Range :: ranges)
 
             let res = loop exprs ranges
-            Some (res), None
+            Some res, None
 
-        | SynExpr.Paren(SynExpr.Paren(_, _, _, _) as synExpr, _, _, _parenRange) -> 
+        | SynExpr.Paren(SynExpr.Paren _ as synExpr, _, _, _parenRange) -> 
             let r, _cacheOpt = searchSynArgExpr traverseSynExpr synExpr ranges
             r, None
 

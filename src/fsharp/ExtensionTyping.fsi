@@ -8,6 +8,7 @@ namespace FSharp.Compiler
 
 open System
 open System.Collections.Concurrent
+open System.Collections.Generic
 open FSharp.Core.CompilerServices
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.Text
@@ -51,12 +52,12 @@ module internal ExtensionTyping =
           isInvalidationSupported: bool *
           isInteractive: bool *
           systemRuntimeContainsType : (string -> bool) *
-          systemRuntimeAssemblyVersion : System.Version *
+          systemRuntimeAssemblyVersion : Version *
           compilerToolPaths : string list * 
           range -> Tainted<ITypeProvider> list
 
     /// Given an extension type resolver, supply a human-readable name suitable for error messages.
-    val DisplayNameOfTypeProvider : Tainted<Microsoft.FSharp.Core.CompilerServices.ITypeProvider> * range -> string
+    val DisplayNameOfTypeProvider : Tainted<ITypeProvider> * range -> string
 
      /// The context used to interpret information in the closure of System.Type, System.MethodInfo and other 
      /// info objects coming from the type provider.
@@ -127,7 +128,7 @@ module internal ExtensionTyping =
         member GetElementType : unit -> ProvidedType
         member GetGenericArguments : unit -> ProvidedType[]
         member GetArrayRank : unit -> int
-        member RawSystemType : System.Type
+        member RawSystemType : Type
         member GetEnumUnderlyingType : unit -> ProvidedType
         member MakePointerType: unit -> ProvidedType
         member MakeByRefType: unit -> ProvidedType
@@ -311,11 +312,11 @@ module internal ExtensionTyping =
     
     /// Get the ILTypeRef for the provided type (including for nested types). Take into account
     /// any type relocations or static linking for generated types.
-    val GetILTypeRefOfProvidedType : Tainted<ProvidedType> * range:range -> FSharp.Compiler.AbstractIL.IL.ILTypeRef
+    val GetILTypeRefOfProvidedType : Tainted<ProvidedType> * range:range -> ILTypeRef
 
     /// Get the ILTypeRef for the provided type (including for nested types). Do not take into account
     /// any type relocations or static linking for generated types.
-    val GetOriginalILTypeRefOfProvidedType : Tainted<ProvidedType> * range:range -> FSharp.Compiler.AbstractIL.IL.ILTypeRef
+    val GetOriginalILTypeRefOfProvidedType : Tainted<ProvidedType> * range:range -> ILTypeRef
 
 
     /// Represents the remapping information for a generated provided type and its nested types.
@@ -328,7 +329,7 @@ module internal ExtensionTyping =
     type ProvidedAssemblyStaticLinkingMap = 
         {  /// The table of remappings from type names in the provided assembly to type
            /// names in the statically linked, embedded assembly.
-           ILTypeMap: System.Collections.Generic.Dictionary<ILTypeRef, ILTypeRef> }
+           ILTypeMap: Dictionary<ILTypeRef, ILTypeRef> }
         
         /// Create a new static linking map, ready to populate with data.
         static member CreateNew : unit -> ProvidedAssemblyStaticLinkingMap

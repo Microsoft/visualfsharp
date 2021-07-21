@@ -189,7 +189,7 @@ module UnusedOpens =
                 | true, scopes -> openStatement.AppliedScope :: scopes
                 | _ -> [openStatement.AppliedScope]
             usedModules.[openedModule.Entity] <- scopes
-        not (newlyOpenedModules.IsEmpty)
+        not newlyOpenedModules.IsEmpty
                                           
     /// Incrementally filter out the open statements one by one. Filter those whose contents are referred to somewhere in the symbol uses.
     /// Async to allow cancellation.
@@ -297,7 +297,7 @@ module SimplifyNames =
                     let necessaryPlidStartCol = r.EndColumn - name.Length - (getPlidLength necessaryPlid)
                     
                     let unnecessaryRange = 
-                        Range.mkRange r.FileName (Position.mkPos r.StartLine plidStartCol) (Position.mkPos r.EndLine necessaryPlidStartCol)
+                        mkRange r.FileName (Position.mkPos r.StartLine plidStartCol) (Position.mkPos r.EndLine necessaryPlidStartCol)
                     
                     let relativeName = (String.concat "." plid) + "." + name
                     result.Add({Range = unnecessaryRange; RelativeName = relativeName})

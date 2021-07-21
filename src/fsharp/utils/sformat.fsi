@@ -356,12 +356,12 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
     [<NoEquality; NoComparison>]
     type internal FormatOptions =
         { FloatingPointFormat: string
-          AttributeProcessor: (string -> (string * string) list -> bool -> unit)
+          AttributeProcessor: string -> (string * string) list -> bool -> unit
 #if COMPILER  // FSharp.Core.dll: PrintIntercepts aren't used there
           PrintIntercepts: (IEnvironment -> obj -> Layout option) list
           StringLimit: int
 #endif
-          FormatProvider: System.IFormatProvider
+          FormatProvider: IFormatProvider
           BindingFlags: System.Reflection.BindingFlags
           PrintWidth: int 
           PrintDepth: int 

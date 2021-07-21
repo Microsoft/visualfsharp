@@ -333,7 +333,7 @@ type FSharpSourceTokenizer =
     member CreateBufferTokenizer : bufferFiller:(char[] * int * int -> int) -> FSharpLineTokenizer
     
 module internal TestExpose =     
-    val TokenInfo : Parser.token -> (FSharpTokenColorKind * FSharpTokenCharKind * FSharpTokenTriggerClass)
+    val TokenInfo : Parser.token -> FSharpTokenColorKind * FSharpTokenCharKind * FSharpTokenTriggerClass
 
 module FSharpKeywords =
     /// Checks if adding backticks to identifier is needed.

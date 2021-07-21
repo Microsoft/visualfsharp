@@ -76,13 +76,13 @@ type FSharpDisplayContext =
 /// or FSharpActivePatternCase.
 [<Class>]
 type FSharpSymbol = 
-    static member internal Create: g: TcGlobals * thisCcu: CcuThunk * thisCcuTyp: ModuleOrNamespaceType * tcImports: TcImports * item: NameResolution.Item -> FSharpSymbol
-    static member internal Create: cenv: SymbolEnv * item: NameResolution.Item -> FSharpSymbol
+    static member internal Create: g: TcGlobals * thisCcu: CcuThunk * thisCcuTyp: ModuleOrNamespaceType * tcImports: TcImports * item: Item -> FSharpSymbol
+    static member internal Create: cenv: SymbolEnv * item: Item -> FSharpSymbol
 
     /// Computes if the symbol is accessible for the given accessibility rights
     member IsAccessible: FSharpAccessibilityRights -> bool
         
-    member internal Item: NameResolution.Item
+    member internal Item: Item
         
     /// Get the assembly declaring this symbol
     member Assembly: FSharpAssembly 

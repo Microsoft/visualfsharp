@@ -52,7 +52,7 @@ val mkLexargs: string list * LightSyntaxStatus * LexResourceManager * LexerIfdef
 
 val reusingLexbufForParsing: Lexbuf -> (unit -> 'a) -> 'a
 
-val usingLexbufForParsing: Lexbuf * string -> (UnicodeLexing.Lexbuf -> 'a) -> 'a
+val usingLexbufForParsing: Lexbuf * string -> (Lexbuf -> 'a) -> 'a
 
 type LexerStringFinisherContext =
     | InterpolatedPart = 1

@@ -103,7 +103,7 @@ type UnionReprDecisions<'Union,'Alt,'Type>
         // Check this is the one and only non-nullary constructor 
         Array.existsOne (isNullary >> not) alts
 
-    member repr.RepresentAlternativeAsStructValue (cu) = 
+    member repr.RepresentAlternativeAsStructValue cu = 
         isStruct cu 
 
     member repr.RepresentAlternativeAsFreshInstancesOfRootClass (cu,alt) = 
@@ -460,7 +460,7 @@ let mkBrIsData ilg sense (avoidHelpers, cuspec,cidx,tg) =
 let emitLdDataTagPrim ilg ldOpt (cg: ICodeGen<'Mark>) (avoidHelpers,cuspec: IlxUnionSpec)  = 
         // If helpers exist, use them
     match cuspec.HasHelpers with
-    | (SpecialFSharpListHelpers | AllHelpers) when not avoidHelpers -> 
+    | SpecialFSharpListHelpers | AllHelpers when not avoidHelpers -> 
         ldOpt |> Option.iter cg.EmitInstr 
         cg.EmitInstr (mkGetTagFromHelpers ilg cuspec)
     | _ -> 
@@ -561,7 +561,7 @@ let emitDataSwitch ilg (cg: ICodeGen<'Mark>) (avoidHelpers, cuspec, cases) =
 
         cg.EmitInstr (mkStloc locn)
 
-        for (cidx,tg) in cases do 
+        for cidx,tg in cases do 
             let alt = altOfUnionSpec cuspec cidx
             let altTy = tyForAlt cuspec alt
             let altName = alt.Name
@@ -583,7 +583,7 @@ let emitDataSwitch ilg (cg: ICodeGen<'Mark>) (avoidHelpers, cuspec, cases) =
         | _ ->
         // Use a dictionary to avoid quadratic lookup in case list
         let dict = Dictionary<int,_>()
-        for (i,case) in cases do dict.[i] <- case
+        for i,case in cases do dict.[i] <- case
         let failLab = cg.GenerateDelayMark ()
         let emitCase i _ = 
             match dict.TryGetValue i with
@@ -861,7 +861,7 @@ let convAlternativeDef (addMethodGeneratedAttrs, addPropertyGeneratedAttrs, addP
                       |> Array.toList
 
 
-                  let basicProps, basicMethods = mkMethodsAndPropertiesForFields (addMethodGeneratedAttrs, addPropertyGeneratedAttrs) (cud.cudReprAccess) attr cud.cudHasHelpers altTy fields 
+                  let basicProps, basicMethods = mkMethodsAndPropertiesForFields (addMethodGeneratedAttrs, addPropertyGeneratedAttrs) cud.cudReprAccess attr cud.cudHasHelpers altTy fields 
                   
                   let basicCtorMeth = 
                       mkILStorageCtor 
@@ -934,7 +934,7 @@ let mkClassUnionDef (addMethodGeneratedAttrs, addPropertyGeneratedAttrs, addProp
 
     let selfFields, selfMeths, selfProps = 
 
-        [ for (cidx, alt) in Array.indexed cud.cudAlternatives do 
+        [ for cidx, alt in Array.indexed cud.cudAlternatives do 
            if repr.RepresentAlternativeAsFreshInstancesOfRootClass (info,alt) || 
               repr.RepresentAlternativeAsStructValue info then
         // TODO
@@ -962,13 +962,13 @@ let mkClassUnionDef (addMethodGeneratedAttrs, addPropertyGeneratedAttrs, addProp
                     (if cuspec.HasHelpers = AllHelpers then ILMemberAccess.Assembly else cud.cudReprAccess))
                 |> addMethodGeneratedAttrs 
 
-            let props, meths = mkMethodsAndPropertiesForFields (addMethodGeneratedAttrs, addPropertyGeneratedAttrs) (cud.cudReprAccess) cud.cudWhere cud.cudHasHelpers baseTy alt.FieldDefs                 
+            let props, meths = mkMethodsAndPropertiesForFields (addMethodGeneratedAttrs, addPropertyGeneratedAttrs) cud.cudReprAccess cud.cudWhere cud.cudHasHelpers baseTy alt.FieldDefs                 
             yield (fields,([ctor] @ meths),props) ]
          |> List.unzip3
          |> (fun (a,b,c) -> List.concat a, List.concat b, List.concat c)
 
     let selfAndTagFields = 
-        [ for (fldName,fldTy) in (selfFields @ tagFieldsInObject)  do
+        [ for fldName,fldTy in (selfFields @ tagFieldsInObject)  do
               let fdef = mkILInstanceField  (fldName,fldTy, None, ILMemberAccess.Assembly) |> addFieldNeverAttrs |> addFieldGeneratedAttrs
               yield fdef.WithInitOnly(not isStruct && isTotallyImmutable) ]
 
@@ -995,7 +995,7 @@ let mkClassUnionDef (addMethodGeneratedAttrs, addPropertyGeneratedAttrs, addProp
            cd 
         else 
            prependInstrsToClassCtor 
-              [ for (info,_alt,altTy,fidx,fd,inRootClass) in altNullaryFields do 
+              [ for info,_alt,altTy,fidx,fd,inRootClass in altNullaryFields do 
                   let constFieldId = (fd.Name,baseTy)
                   let constFieldSpec = mkConstFieldSpecFromId baseTy constFieldId
                   match repr.DiscriminationTechnique info with 

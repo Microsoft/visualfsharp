@@ -146,7 +146,7 @@ and [<Sealed>] FSharpExpr (cenv, f: (unit -> FSharpExpr) option, e: E, m: range,
     member x.Range = m
     member x.Type = FSharpType(cenv, ty)
     member x.cenv = cenv
-    member x.E = match box e with null -> (e <- f.Value().E); e | _ -> e
+    member x.E = match box e with null -> e <- f.Value().E; e | _ -> e
     override x.ToString() = sprintf "%+A" x.E
 
     member x.ImmediateSubExpressions = 
@@ -194,10 +194,10 @@ and [<Sealed>] FSharpExpr (cenv, f: (unit -> FSharpExpr) option, e: E, m: range,
         | E.ObjectExpr (_ty, basecall, overrides, interfaceImpls) -> 
              [ yield basecall
                for m in overrides do yield m.Body
-               for (_, ms) in interfaceImpls do for m in ms do yield m.Body ]
+               for _, ms in interfaceImpls do for m in ms do yield m.Body ]
         | E.DecisionTree (inputExpr, targetCases) -> 
             [ yield inputExpr
-              for (_targetVars, targetExpr) in targetCases do yield targetExpr ]
+              for _targetVars, targetExpr in targetCases do yield targetExpr ]
         | E.DecisionTreeSuccess (_targetNumber, targetArgs) -> targetArgs
         | E.UnionCaseSet (obj, _unionType, _unionCase, _unionField, valueExpr) -> [ yield obj; yield valueExpr ]
         | E.TraitCall (_sourceTypes, _traitName, _memberFlags, _paramTypes, _retTypes, args) -> args
@@ -340,7 +340,7 @@ module FSharpExprConvert =
             | TOp.UnionCaseFieldGetAddr (uref, n, _), [arg], _ -> mkUnionCaseFieldGetProvenViaExprAddr (exprOfExprAddr cenv arg, uref, tyargs, n, m)
             | TOp.ILAsm ([ I_ldflda fspec ], retTypes), [arg], _  -> mkAsmExpr ([ mkNormalLdfld fspec ], tyargs, [exprOfExprAddr cenv arg], retTypes, m)
             | TOp.ILAsm ([ I_ldsflda fspec ], retTypes), _, _  -> mkAsmExpr ([ mkNormalLdsfld fspec ], tyargs, args, retTypes, m)
-            | TOp.ILAsm (([ I_ldelema(_ro, _isNativePtr, shape, _tyarg) ] ), _), (arr :: idxs), [elemty]  -> 
+            | TOp.ILAsm ([ I_ldelema(_ro, _isNativePtr, shape, _tyarg) ], _), arr :: idxs, [elemty]  -> 
                 match shape.Rank, idxs with 
                 | 1, [idx1] -> mkCallArrayGet cenv.g m elemty arr idx1
                 | 2, [idx1; idx2] -> mkCallArray2DGet cenv.g m elemty arr idx1 idx2
@@ -425,7 +425,7 @@ module FSharpExprConvert =
     and ConvModuleValueOrMemberUseLinear (cenv: SymbolEnv) env (expr: Expr, vref, vFlags, tyargs, curriedArgs) contF =
         let m = expr.Range 
 
-        let (numEnclTypeArgs, _, isNewObj, _valUseFlags, _isSelfInit, takesInstanceArg, _isPropGet, _isPropSet) = 
+        let numEnclTypeArgs, _, isNewObj, _valUseFlags, _isSelfInit, takesInstanceArg, _isPropGet, _isPropSet = 
             GetMemberCallInfo cenv.g (vref, vFlags)
 
         let isMember, tps, curriedArgInfos = 
@@ -447,7 +447,7 @@ module FSharpExprConvert =
         let objArgs, curriedArgs = 
             match takesInstanceArg, curriedArgs with 
             | false, curriedArgs -> [], curriedArgs
-            | true, (objArg :: curriedArgs) -> [objArg], curriedArgs
+            | true, objArg :: curriedArgs -> [objArg], curriedArgs
             | true, [] -> failwith ("warning: unexpected missing object argument when generating quotation for call to F# object member "+vref.LogicalName)
 
         // Check to see if there aren't enough arguments or if there is a tuple-arity mismatch
@@ -592,7 +592,7 @@ module FSharpExprConvert =
         | Expr.Obj (_lambdaId, ty, _basev, basecall, overrides, iimpls, _m)      -> 
             let basecallR = ConvExpr cenv env basecall
             let ConvertMethods methods = 
-                [ for (TObjExprMethod(slotsig, _, tps, tmvs, body, _)) in methods -> 
+                [ for TObjExprMethod(slotsig, _, tps, tmvs, body, _) in methods -> 
                     let vslR = List.map (List.map (ConvVal cenv)) tmvs 
                     let sgn = FSharpAbstractSignature(cenv, slotsig)
                     let tpsR = [ for tp in tps -> FSharpGenericParameter(cenv, tp) ]
@@ -990,7 +990,7 @@ module FSharpExprConvert =
                 try
                     nlr.EnclosingEntity.Deref 
                 with _ ->
-                    failwithf "Failed to resolve type '%s'" (nlr.EnclosingEntity.CompiledName)
+                    failwithf "Failed to resolve type '%s'" nlr.EnclosingEntity.CompiledName
             let ccu = nlr.EnclosingEntity.nlr.Ccu
             let vName = nlr.ItemKey.PartialKey.LogicalName // this is actually compiled name
             let findByName =
@@ -1195,7 +1195,7 @@ module FSharpExprConvert =
     and ConvValRef cenv env m (vref: ValRef) =
         let v = vref.Deref
         if env.isinstVals.ContainsVal v then 
-            let (ty, e) = env.isinstVals.[v]
+            let ty, e = env.isinstVals.[v]
             ConvExprPrim cenv env (mkCallUnbox cenv.g m ty e)
         elif env.substVals.ContainsVal v then 
             let e = env.substVals.[v]
@@ -1270,7 +1270,7 @@ module FSharpExprConvert =
                         // Decompile cached isinst tests
                         match e1 with 
                         | Expr.Val (vref, _, _) when env.isinstVals.ContainsVal vref.Deref  ->
-                            let (ty, e) =  env.isinstVals.[vref.Deref]
+                            let ty, e =  env.isinstVals.[vref.Deref]
                             let tyR = ConvType cenv ty
                             let eR = ConvExpr cenv env e
                             // note: reverse the branches - a null test is a failure of an isinst test

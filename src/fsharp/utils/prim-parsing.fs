@@ -108,7 +108,7 @@ type Stack<'a>(n)  =
     member buf.IsEmpty = (count = 0)
     member buf.PrintStack() = 
         for i = 0 to (count - 1) do 
-            System.Console.Write("{0}{1}",(contents.[i]),if i=count-1 then ":" else "-") 
+            Console.Write("{0}{1}",contents.[i],if i=count-1 then ":" else "-") 
           
 
 #if DEBUG
@@ -203,7 +203,7 @@ module internal Implementation =
 
     let interpret (tables: Tables<'tok>) lexer (lexbuf : LexBuffer<_>) initialState =                                                                      
 #if DEBUG
-        if Flags.debug then System.Console.WriteLine("\nParser: interpret tables")
+        if Flags.debug then Console.WriteLine("\nParser: interpret tables")
 #endif
         let stateStack : Stack<int> = new Stack<_>(100)
         stateStack.Push(initialState)
@@ -260,22 +260,22 @@ module internal Implementation =
         // Pop the stack until we can shift the 'error' token. If 'tokenOpt' is given
         // then keep popping until we can shift both the 'error' token and the token in 'tokenOpt'.
         // This is used at end-of-file to make sure we can shift both the 'error' token and the 'EOF' token.
-        let rec popStackUntilErrorShifted(tokenOpt) =
+        let rec popStackUntilErrorShifted tokenOpt =
             // Keep popping the stack until the "error" terminal is shifted
 #if DEBUG
-            if Flags.debug then System.Console.WriteLine("popStackUntilErrorShifted")
+            if Flags.debug then Console.WriteLine("popStackUntilErrorShifted")
 #endif
             if stateStack.IsEmpty then 
 #if DEBUG
                 if Flags.debug then 
-                    System.Console.WriteLine("state stack empty during error recovery - generating parse error")
+                    Console.WriteLine("state stack empty during error recovery - generating parse error")
 #endif
                 failwith "parse error"
             
             let currState = stateStack.Peep()
 #if DEBUG
             if Flags.debug then 
-                System.Console.WriteLine("In state {0} during error recovery", currState)
+                Console.WriteLine("In state {0} during error recovery", currState)
 #endif
             
             let action = actionTable.Read(currState, tables.tagOfErrorTerminal)
@@ -288,7 +288,7 @@ module internal Implementation =
                     actionKind (actionTable.Read(nextState, tables.tagOfToken(token))) = shiftFlag) then
 
 #if DEBUG
-                if Flags.debug then System.Console.WriteLine("shifting error, continuing with error recovery")
+                if Flags.debug then Console.WriteLine("shifting error, continuing with error recovery")
 #endif
                 let nextState = actionValue action 
                 // The "error" non terminal needs position information, though it tends to be unreliable.
@@ -300,7 +300,7 @@ module internal Implementation =
                     failwith "parse error"
 #if DEBUG
                 if Flags.debug then 
-                    System.Console.WriteLine("popping stack during error recovery")
+                    Console.WriteLine("popping stack during error recovery")
 #endif
                 valueStack.Pop()
                 stateStack.Pop()
@@ -454,10 +454,10 @@ module internal Implementation =
 
                         let currentToken = if haveLookahead then Some(lookaheadToken) else None
                         let actions,defaultAction = actionTable.ReadAll(state) 
-                        let explicit = Set.ofList [ for (tag,_action) in actions -> tag ]
+                        let explicit = Set.ofList [ for tag,_action in actions -> tag ]
                         
                         let shiftableTokens = 
-                           [ for (tag,action) in actions do
+                           [ for tag,action in actions do
                                  if (actionKind action) = shiftFlag then 
                                      yield tag
                              if actionKind defaultAction = shiftFlag  then
@@ -471,7 +471,7 @@ module internal Implementation =
                                yield stateToProdIdxsTable.ReadAll(state)  ]
 
                         let reduceTokens = 
-                           [ for (tag,action) in actions do
+                           [ for tag,action in actions do
                                 if actionKind(action) = reduceFlag then
                                     yield tag
                              if actionKind(defaultAction) = reduceFlag  then
@@ -484,14 +484,14 @@ module internal Implementation =
                         popStackUntilErrorShifted(None)
                         errorSuppressionCountDown <- 3
 #if DEBUG
-                        if Flags.debug then System.Console.WriteLine("generated syntax error and shifted error token, haveLookahead = {0}\n", haveLookahead)
+                        if Flags.debug then Console.WriteLine("generated syntax error and shifted error token, haveLookahead = {0}\n", haveLookahead)
 #endif
                     )
                 ) elif kind = acceptFlag then 
                     finished <- true
 #if DEBUG
                 else
-                  if Flags.debug then System.Console.WriteLine("ALARM!!! drop through case in parser")  
+                  if Flags.debug then Console.WriteLine("ALARM!!! drop through case in parser")  
 #endif
         done                                                                                                     
         // OK, we're done - read off the overall generated value

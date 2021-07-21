@@ -123,9 +123,9 @@ let mkApp (a, b) = CombExpr(AppOp, [], [a; b])
 
 let mkLambda (a, b) = LambdaExpr (a, b)
 
-let mkQuote (a) = QuoteExpr (a)
+let mkQuote a = QuoteExpr a
 
-let mkQuoteRaw40 (a) = QuoteRawExpr (a)
+let mkQuoteRaw40 a = QuoteRawExpr a
 
 let mkCond (x1, x2, x3)          = CombExpr(CondOp, [], [x1;x2;x3])
 
@@ -169,15 +169,15 @@ let mkCoerce  (ty, arg)        = CombExpr(CoerceOp, [ty], [arg])
 
 let mkTypeTest  (ty, arg)      = CombExpr(TypeTestOp, [ty], [arg])
 
-let mkAddressOf  (arg)        = CombExpr(AddressOfOp, [], [arg])
+let mkAddressOf  arg        = CombExpr(AddressOfOp, [], [arg])
 
 let mkAddressSet  (arg1, arg2) = CombExpr(AddressSetOp, [], [arg1;arg2])
 
 let mkVarSet  (arg1, arg2)     = CombExpr(ExprSetOp, [], [arg1;arg2])
 
-let mkDefaultValue (ty)       = CombExpr(DefaultValueOp, [ty], [])
+let mkDefaultValue ty       = CombExpr(DefaultValueOp, [ty], [])
 
-let mkThisVar (ty)       = ThisVarExpr(ty)
+let mkThisVar ty       = ThisVarExpr(ty)
 
 let mkNewArray     (ty, args)  = CombExpr(NewArrayOp, [ty], args)
 
@@ -235,7 +235,7 @@ let mkMethodCallW (d1, d2, d3, tyargs, args) = CombExpr(MethodCallWOp(d1, d2, d3
 
 let mkAttributedExpression(e, attr) = AttrExpr(e, [attr])
 
-let isAttributedExpression e = match e with AttrExpr(_, _) -> true | _ -> false
+let isAttributedExpression e = match e with AttrExpr _ -> true | _ -> false
 
 //---------------------------------------------------------------------------
 // Pickle/unpickle expression and type specifications in a stable format
@@ -313,18 +313,18 @@ module SimplePickle =
 
     let p_bytes (s:byte[]) st =
         let len = s.Length
-        p_int32 (len) st
+        p_int32 len st
         st.os.EmitBytes s
 
     let p_memory (s:ReadOnlyMemory<byte>) st =
         let len = s.Length
-        p_int32 (len) st
+        p_int32 len st
         st.os.EmitMemory s
 
     let prim_pstring (s:string) st =
         let bytes = Encoding.UTF8.GetBytes s
         let len = bytes.Length
-        p_int32 (len) st
+        p_int32 len st
         st.os.EmitBytes bytes
 
     let p_int (c:int) st = p_int32 c st
@@ -343,9 +343,9 @@ module SimplePickle =
         p_int32 (int32 (i &&& 0xFFFFFFFFL)) st
         p_int32 (int32 (i >>> 32)) st
 
-    let bits_of_float32 (x:float32) = System.BitConverter.ToInt32(System.BitConverter.GetBytes(x), 0)
+    let bits_of_float32 (x:float32) = BitConverter.ToInt32(BitConverter.GetBytes(x), 0)
 
-    let bits_of_float (x:float) = System.BitConverter.ToInt64(System.BitConverter.GetBytes(x), 0)
+    let bits_of_float (x:float) = BitConverter.ToInt64(BitConverter.GetBytes(x), 0)
 
     let p_uint64 x st = p_int64 (int64 x) st
 

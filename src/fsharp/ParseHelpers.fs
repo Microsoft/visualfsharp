@@ -229,14 +229,14 @@ let ParseAssemblyCodeInstructions s reportLibraryOnlyFeatures (isFeatureSupporte
     [| |]
 #else
     try
-        FSharp.Compiler.AbstractIL.AsciiParser.ilInstrs
-           FSharp.Compiler.AbstractIL.AsciiLexer.token
-           (UnicodeLexing.StringAsLexbuf(reportLibraryOnlyFeatures, isFeatureSupported, checkLanguageFeatureErrorRecover, s))
+        AsciiParser.ilInstrs
+           AsciiLexer.token
+           (StringAsLexbuf(reportLibraryOnlyFeatures, isFeatureSupported, checkLanguageFeatureErrorRecover, s))
     with _ ->
       errorR(Error(FSComp.SR.astParseEmbeddedILError(), m)); [||]
 #endif
 
-let ParseAssemblyCodeType s reportLibraryOnlyFeatures (isFeatureSupported: Features.LanguageFeature -> bool) (checkLanguageFeatureErrorRecover: Features.LanguageFeature -> range -> unit) m =
+let ParseAssemblyCodeType s reportLibraryOnlyFeatures (isFeatureSupported: LanguageFeature -> bool) (checkLanguageFeatureErrorRecover: LanguageFeature -> range -> unit) m =
     ignore s
     ignore isFeatureSupported
     ignore checkLanguageFeatureErrorRecover
@@ -248,9 +248,9 @@ let ParseAssemblyCodeType s reportLibraryOnlyFeatures (isFeatureSupported: Featu
     let isFeatureSupported (_featureId:LanguageFeature) = true
     let checkLanguageFeatureErrorRecover (_featureId:LanguageFeature) _range = ()
     try
-        FSharp.Compiler.AbstractIL.AsciiParser.ilType
-           FSharp.Compiler.AbstractIL.AsciiLexer.token
-           (UnicodeLexing.StringAsLexbuf(reportLibraryOnlyFeatures, isFeatureSupported, checkLanguageFeatureErrorRecover, s))
+        AsciiParser.ilType
+           AsciiLexer.token
+           (StringAsLexbuf(reportLibraryOnlyFeatures, isFeatureSupported, checkLanguageFeatureErrorRecover, s))
     with RecoverableParseError ->
       errorR(Error(FSComp.SR.astParseEmbeddedILTypeError(), m));
       IL.PrimaryAssemblyILGlobals.typ_Object

@@ -174,7 +174,7 @@ namespace Internal.Utilities.Text.Lexing
                       0,
                       0)
 
-    type internal LexBufferFiller<'Char> = (LexBuffer<'Char> -> unit)
+    type internal LexBufferFiller<'Char> = LexBuffer<'Char> -> unit
 
     and [<Sealed>]
         internal LexBuffer<'Char>(filler: LexBufferFiller<'Char>, reportLibraryOnlyFeatures: bool, supportsFeature:LanguageFeature -> bool, checkLanguageFeatureErrorRecover:LanguageFeature -> range -> unit) =
@@ -235,7 +235,7 @@ namespace Internal.Utilities.Text.Lexing
 
         member lexbuf.IsPastEndOfStream 
            with get() = eof
-           and  set(b) =  eof <- b
+           and  set b =  eof <- b
 
         member lexbuf.DiscardInput () = discardInput ()
 

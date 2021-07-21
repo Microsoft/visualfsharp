@@ -46,7 +46,7 @@ type StableNiceNameGenerator() =
 
     let lockObj = obj()
 
-    let names = new Dictionary<(string * int64), string>(100)
+    let names = new Dictionary<string * int64, string>(100)
     let basicNameCounts = new Dictionary<string, int>(100)
 
     member x.GetUniqueCompilerGeneratedName (name, m: range, uniq) =

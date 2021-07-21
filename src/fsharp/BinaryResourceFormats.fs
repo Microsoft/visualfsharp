@@ -107,7 +107,7 @@ module VersionResourceFormat =
         let szKey = Bytes.stringAsUnicodeNullTerminated "VarFileInfo" // Contains the Unicode string StringFileInfo
         // Contains an array of one or more StringTable structures.
         let children =
-            [| for (lang, codePage) in vars do
+            [| for lang, codePage in vars do
                    let szKey = Bytes.stringAsUnicodeNullTerminated "Translation"
                    yield VersionInfoElement(0x0, szKey, Some([| yield! i16 lang
                                                                 yield! i16 codePage |]), [| |], false) |]
@@ -208,7 +208,7 @@ module VersionResourceFormat =
     let VS_VERSION_INFO(fixedFileInfo, stringFileInfo, varFileInfo)  =
         let wType = 0x0
         let szKey = Bytes.stringAsUnicodeNullTerminated "VS_VERSION_INFO" // Contains the Unicode string VS_VERSION_INFO
-        let value = VS_FIXEDFILEINFO (fixedFileInfo)
+        let value = VS_FIXEDFILEINFO fixedFileInfo
         let children =
             [| yield StringFileInfo stringFileInfo
                yield VarFileInfo varFileInfo

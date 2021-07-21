@@ -76,7 +76,7 @@ module internal ProjectFile =
                 not(String.IsNullOrEmpty(r.NugetPackageId) ||
                     String.IsNullOrEmpty(r.NativePath)))
             |> Array.map(fun r ->
-                            if Directory.Exists(r.NativePath) then Some (r.NativePath)
+                            if Directory.Exists(r.NativePath) then Some r.NativePath
                             elif File.Exists(r.NativePath) then Some (Path.GetDirectoryName(r.NativePath).Replace('\\', '/'))
                             else None)
             |> Array.filter(fun r -> r.IsSome)
@@ -96,7 +96,7 @@ module internal ProjectFile =
 
         [| for line in lines do
             let fields = line.Split(',')
-            if fields.Length < 8 then raise (new System.InvalidOperationException(sprintf "Internal error - Invalid resolutions file format '%s'" line))
+            if fields.Length < 8 then raise (new InvalidOperationException(sprintf "Internal error - Invalid resolutions file format '%s'" line))
             else
                 { NugetPackageId = fields.[0]
                   NugetPackageVersion = fields.[1]

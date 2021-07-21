@@ -189,10 +189,10 @@ module ErrorLoggerExtensions =
         member ErrorRecoveryNoRange: exn:exn -> unit
 
 /// NOTE: The change will be undone when the returned "unwind" object disposes
-val PushThreadBuildPhaseUntilUnwind: phase:BuildPhase -> System.IDisposable
+val PushThreadBuildPhaseUntilUnwind: phase:BuildPhase -> IDisposable
 
 /// NOTE: The change will be undone when the returned "unwind" object disposes
-val PushErrorLoggerPhaseUntilUnwind: errorLoggerTransformer:(ErrorLogger -> #ErrorLogger) -> System.IDisposable
+val PushErrorLoggerPhaseUntilUnwind: errorLoggerTransformer:(ErrorLogger -> #ErrorLogger) -> IDisposable
 
 val SetThreadBuildPhaseNoUnwind: phase:BuildPhase -> unit
 
@@ -228,7 +228,7 @@ val libraryOnlyWarning: m:range -> unit
 
 val deprecatedOperator: m:range -> unit
 
-val mlCompatWarning: s:System.String -> m:range -> unit
+val mlCompatWarning: s:String -> m:range -> unit
 
 val suppressErrorReporting: f:(unit -> 'a) -> 'a
 

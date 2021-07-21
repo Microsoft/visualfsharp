@@ -74,7 +74,7 @@ module internal QueueList =
 
     let tryFind f (x:QueueList<_>) = Seq.tryFind f x
 
-    let one(x) = QueueList [x]
+    let one x = QueueList [x]
 
     let appendOne (x:QueueList<_>) y = x.AppendOne(y)
 

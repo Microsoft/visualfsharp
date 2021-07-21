@@ -364,7 +364,7 @@ let ``Test ManyProjectsStressTest all symbols`` () =
              if  s.Symbol.DisplayName = "v" then
                  yield s.Symbol ]
 
-    for (p,pResults) in projectsResults do
+    for p,pResults in projectsResults do
         let vFromProject =
             [ for s in pResults.GetAllUsesOfAllSymbols() do
                 if  s.Symbol.DisplayName = "v" then

@@ -21,7 +21,7 @@ open Checked
 
 type BYTE = byte
 type DWORD = uint32
-type WCHAR = System.Char
+type WCHAR = Char
 type WORD = uint16
 
 let inline WORD s = uint16 s
@@ -78,8 +78,8 @@ type CvtResFile () =
                     let mutable pAdditional = RESOURCE()
                     pAdditional.HeaderSize <- cbHdr
                     pAdditional.DataSize <- cbData
-                    pAdditional.pstringType <- CvtResFile.ReadStringOrID (reader)
-                    pAdditional.pstringName <- CvtResFile.ReadStringOrID (reader)
+                    pAdditional.pstringType <- CvtResFile.ReadStringOrID reader
+                    pAdditional.pstringName <- CvtResFile.ReadStringOrID reader
                     stream.Position <- stream.Position + 3L &&& ~~~3L
                     pAdditional.DataVersion <- reader.ReadUInt32 ()
                     pAdditional.MemoryFlags <- reader.ReadUInt16 ()
@@ -92,7 +92,7 @@ type CvtResFile () =
                     if pAdditional.pstringType.theString = Unchecked.defaultof<_> && (pAdditional.pstringType.Ordinal = uint16 CvtResFile.RT_DLGINCLUDE) then
                         () (* ERROR ContinueNotSupported *)
                     else
-                        resourceNames.Add (pAdditional)
+                        resourceNames.Add pAdditional
         resourceNames
 
     static member private ReadStringOrID (fhIn: BinaryReader) =
@@ -192,7 +192,7 @@ type StreamExtensions () =
 type COFFResourceReader() =
     static member private ConfirmSectionValues (hdr: SectionHeader, fileSize: int64) = 
         if int64 hdr.PointerToRawData + int64 hdr.SizeOfRawData > fileSize then
-            raise <| ResourceException ("CoffResourceInvalidSectionSize")
+            raise <| ResourceException "CoffResourceInvalidSectionSize"
 
     static member ReadWin32ResourcesFromCOFF (stream: Stream) = 
         let mutable peHeaders = new PEHeaders (stream)
@@ -208,7 +208,7 @@ type COFFResourceReader() =
                     rsrc2 <- sectionHeader
                     foundCount <- foundCount + 1
         if foundCount <> 2 then
-            raise <| ResourceException ("CoffResourceMissingSection")
+            raise <| ResourceException "CoffResourceMissingSection"
         COFFResourceReader.ConfirmSectionValues (rsrc1, stream.Length)
         COFFResourceReader.ConfirmSectionValues (rsrc2, stream.Length)
         let mutable imageResourceSectionBytes = Array.zeroCreate (rsrc1.SizeOfRawData + rsrc2.SizeOfRawData)
@@ -220,7 +220,7 @@ type COFFResourceReader() =
         try
             let mutable relocLastAddress = rsrc1.PointerToRelocations + (int rsrc1.NumberOfRelocations * SizeOfRelocationEntry)
             if int64 relocLastAddress > stream.Length then
-                raise <| ResourceException ("CoffResourceInvalidRelocation")
+                raise <| ResourceException "CoffResourceInvalidRelocation"
         with
             :? OverflowException -> (raise <| ResourceException("CoffResourceInvalidRelocation"))
         let mutable relocationOffsets = Array.zeroCreate (int rsrc1.NumberOfRelocations)
@@ -239,7 +239,7 @@ type COFFResourceReader() =
         try
             let mutable lastSymAddress = int64 peHeaders.CoffHeader.PointerToSymbolTable + int64 peHeaders.CoffHeader.NumberOfSymbols * int64 ImageSizeOfSymbol (* ERROR UnknownNode *)
             if lastSymAddress > stream.Length then
-                raise <| ResourceException ("CoffResourceInvalidSymbol")
+                raise <| ResourceException "CoffResourceInvalidSymbol"
         with
             :? OverflowException -> (raise <| ResourceException("CoffResourceInvalidSymbol"))
         let mutable outputStream = new MemoryStream (imageResourceSectionBytes)
@@ -248,7 +248,7 @@ type COFFResourceReader() =
             let mutable (i: int) = 0
             while (i < relocationSymbolIndices.Length) do
                 if int relocationSymbolIndices.[i] > peHeaders.CoffHeader.NumberOfSymbols then
-                    raise <| ResourceException ("CoffResourceInvalidRelocation")
+                    raise <| ResourceException "CoffResourceInvalidRelocation"
                 let mutable offsetOfSymbol = int64 peHeaders.CoffHeader.PointerToSymbolTable + int64 relocationSymbolIndices.[i] * int64 ImageSizeOfSymbol
                 stream.Position <- offsetOfSymbol
                 stream.Position <- stream.Position + 8L
@@ -323,11 +323,11 @@ type VersionHelper() =
     /// <returns>True when parsing succeeds completely (i.e. every character in the string was consumed), false otherwise.</returns>
     static member private TryParse(s: string, allowWildcard: bool, maxValue: uint16, allowPartialParse: bool, [<Out>] version: byref<Version>) = 
         Debug.Assert (not allowWildcard || maxValue < UInt16.MaxValue)
-        if String.IsNullOrWhiteSpace (s) then
+        if String.IsNullOrWhiteSpace s then
             version <- VersionHelper.NullVersion
             false
         else
-            let mutable (elements: string[]) = s.Split ('.')
+            let mutable (elements: string[]) = s.Split '.'
             let mutable (hasWildcard: bool) = allowWildcard && elements.[(int (elements.Length - 1))] = "*"
             if hasWildcard && elements.Length < 3 || elements.Length > 4 then
                 version <- VersionHelper.NullVersion
@@ -351,7 +351,7 @@ type VersionHelper() =
                                 version <- VersionHelper.NullVersion
                             else
                                 parseError <- true
-                                if String.IsNullOrWhiteSpace (elements.[i]) then
+                                if String.IsNullOrWhiteSpace elements.[i] then
                                     values.[i] <- 0us
                                     breakLoop <- true
                                 else
@@ -365,7 +365,7 @@ type VersionHelper() =
                                             let mutable idx = 0
                                             let mutable breakLoop = false
                                             while (idx < elements.[i].Length) && not breakLoop do
-                                                if not (Char.IsDigit (elements.[i].[idx])) then
+                                                if not (Char.IsDigit elements.[i].[idx]) then
                                                     invalidFormat <- true
                                                     VersionHelper.TryGetValue ((elements.[i].Substring (0, idx)), ref values.[i]) |> ignore<bool>
                                                     breakLoop <- true
@@ -467,7 +467,7 @@ type VersionResourceSerializer () =
             this._productNameContents <- productName
             this._productVersionContents <- productVersion
             this._assemblyVersionContents <- assemblyVersion
-            this._langIdAndCodePageKey <- System.String.Format ("{0:x4}{1:x4}", 0, VersionResourceSerializer.CP_WINUNICODE)
+            this._langIdAndCodePageKey <- String.Format ("{0:x4}{1:x4}", 0, VersionResourceSerializer.CP_WINUNICODE)
 
     static member val private VFT_APP = 0x00000001u
     static member val private VFT_DLL = 0x00000002u
@@ -506,16 +506,16 @@ type VersionResourceSerializer () =
         VersionHelper.TryParse (this._fileVersionContents, ref fileVersion) |> ignore<bool>
         let mutable (productVersion: Version) = Unchecked.defaultof<Version>
         VersionHelper.TryParse (this._productVersionContents, ref productVersion) |> ignore<bool>
-        writer.Write (0xFEEF04BDu)
-        writer.Write (0x00010000u)
+        writer.Write 0xFEEF04BDu
+        writer.Write 0x00010000u
         writer.Write ((uint32 fileVersion.Major <<< 16) ||| uint32 fileVersion.Minor)
         writer.Write ((uint32 fileVersion.Build <<< 16) ||| uint32 fileVersion.Revision)
         writer.Write ((uint32 productVersion.Major <<< 16) ||| uint32 productVersion.Minor)
         writer.Write ((uint32 productVersion.Build <<< 16) ||| uint32 productVersion.Revision)
-        writer.Write (0x0000003Fu)
+        writer.Write 0x0000003Fu
         writer.Write 0u
-        writer.Write (0x00000004u)
-        writer.Write (this.FileType)
+        writer.Write 0x00000004u
+        writer.Write this.FileType
         writer.Write 0u
         writer.Write 0u
         writer.Write 0u
@@ -542,12 +542,12 @@ type VersionResourceSerializer () =
         //let mutable (cbVal: int) = keyValuePair.Value.Length + 1 * 2
         let mutable startPos = writer.BaseStream.Position
         Debug.Assert (startPos &&& 3L = 0L)
-        writer.Write (cbBlock)
+        writer.Write cbBlock
         writer.Write (uint16 (keyValuePair.Value.Length + 1))
-        writer.Write (1us)
+        writer.Write 1us
         writer.Write (keyValuePair.Key.ToCharArray ())
         writer.Write (uint16 0) //(WORD)'\0'
-        writer.Write (Array.zeroCreate (VersionResourceSerializer.PadKeyLen (cbKey) - cbKey): byte[])
+        writer.Write (Array.zeroCreate (VersionResourceSerializer.PadKeyLen cbKey - cbKey): byte[])
         Debug.Assert (writer.BaseStream.Position &&& 3L = 0L)
         writer.Write (keyValuePair.Value.ToCharArray ())
         writer.Write (uint16 0) // (WORD)'\0'
@@ -557,7 +557,7 @@ type VersionResourceSerializer () =
         VersionResourceSerializer.PadKeyLen (sz.Length + 1 * sizeof<WCHAR>) / sizeof<WCHAR>
 
     static member private KEYBYTES(sz: string) = 
-        VersionResourceSerializer.KEYSIZE (sz) * sizeof<WCHAR>
+        VersionResourceSerializer.KEYSIZE sz * sizeof<WCHAR>
 
     member private this.GetStringsSize() = 
         let mutable (sum: int) = 0
@@ -569,11 +569,11 @@ type VersionResourceSerializer () =
     member this.GetDataSize () = 
         let mutable (sizeEXEVERRESOURCE: int) =
              sizeof<WORD> * 3 * 5 + 2 *  sizeof<WORD> +
-             VersionResourceSerializer.KEYBYTES (VersionResourceSerializer.vsVersionInfoKey) +
-             VersionResourceSerializer.KEYBYTES (VersionResourceSerializer.varFileInfoKey) +
-             VersionResourceSerializer.KEYBYTES (VersionResourceSerializer.translationKey) +
-             VersionResourceSerializer.KEYBYTES (VersionResourceSerializer.stringFileInfoKey) +
-             VersionResourceSerializer.KEYBYTES (this._langIdAndCodePageKey) +
+             VersionResourceSerializer.KEYBYTES VersionResourceSerializer.vsVersionInfoKey +
+             VersionResourceSerializer.KEYBYTES VersionResourceSerializer.varFileInfoKey +
+             VersionResourceSerializer.KEYBYTES VersionResourceSerializer.translationKey +
+             VersionResourceSerializer.KEYBYTES VersionResourceSerializer.stringFileInfoKey +
+             VersionResourceSerializer.KEYBYTES this._langIdAndCodePageKey +
              int VersionResourceSerializer.sizeVS_FIXEDFILEINFO
         this.GetStringsSize () + sizeEXEVERRESOURCE
 
@@ -584,40 +584,40 @@ type VersionResourceSerializer () =
         writer.Write (WORD VersionResourceSerializer.sizeVS_FIXEDFILEINFO)
         writer.Write (WORD 0us)
         writer.Write (VersionResourceSerializer.vsVersionInfoKey.ToCharArray ())
-        writer.Write (Array.zeroCreate (VersionResourceSerializer.KEYBYTES (VersionResourceSerializer.vsVersionInfoKey) - VersionResourceSerializer.vsVersionInfoKey.Length * 2): byte[])
+        writer.Write (Array.zeroCreate (VersionResourceSerializer.KEYBYTES VersionResourceSerializer.vsVersionInfoKey - VersionResourceSerializer.vsVersionInfoKey.Length * 2): byte[])
         Debug.Assert (writer.BaseStream.Position &&& 3L = 0L)
-        this.WriteVSFixedFileInfo (writer)
+        this.WriteVSFixedFileInfo writer
         writer.Write (WORD (sizeof<WORD> * 2 +
                             2 * VersionResourceSerializer.HDRSIZE +
-                            VersionResourceSerializer.KEYBYTES (VersionResourceSerializer.varFileInfoKey) +
-                            VersionResourceSerializer.KEYBYTES (VersionResourceSerializer.translationKey)))
+                            VersionResourceSerializer.KEYBYTES VersionResourceSerializer.varFileInfoKey +
+                            VersionResourceSerializer.KEYBYTES VersionResourceSerializer.translationKey))
         writer.Write (WORD 0us)
         writer.Write (WORD 1us)
         writer.Write (VersionResourceSerializer.varFileInfoKey.ToCharArray ())
-        writer.Write (Array.zeroCreate (VersionResourceSerializer.KEYBYTES (VersionResourceSerializer.varFileInfoKey) - VersionResourceSerializer.varFileInfoKey.Length * 2): byte[])
+        writer.Write (Array.zeroCreate (VersionResourceSerializer.KEYBYTES VersionResourceSerializer.varFileInfoKey - VersionResourceSerializer.varFileInfoKey.Length * 2): byte[])
         Debug.Assert (writer.BaseStream.Position &&& 3L = 0L)
-        writer.Write (WORD (sizeof<WORD> * 2 + VersionResourceSerializer.HDRSIZE + VersionResourceSerializer.KEYBYTES (VersionResourceSerializer.translationKey)))
+        writer.Write (WORD (sizeof<WORD> * 2 + VersionResourceSerializer.HDRSIZE + VersionResourceSerializer.KEYBYTES VersionResourceSerializer.translationKey))
         writer.Write (WORD (sizeof<WORD> * 2))
         writer.Write (WORD 0us)
         writer.Write (VersionResourceSerializer.translationKey.ToCharArray ())
-        writer.Write (Array.zeroCreate (VersionResourceSerializer.KEYBYTES (VersionResourceSerializer.translationKey) - VersionResourceSerializer.translationKey.Length * 2): byte[])
+        writer.Write (Array.zeroCreate (VersionResourceSerializer.KEYBYTES VersionResourceSerializer.translationKey - VersionResourceSerializer.translationKey.Length * 2): byte[])
         Debug.Assert (writer.BaseStream.Position &&& 3L = 0L)
-        writer.Write (0us)
+        writer.Write 0us
         writer.Write (WORD VersionResourceSerializer.CP_WINUNICODE)
         Debug.Assert (writer.BaseStream.Position &&& 3L = 0L)
         writer.Write (WORD (2 * VersionResourceSerializer.HDRSIZE +
-                            VersionResourceSerializer.KEYBYTES (VersionResourceSerializer.stringFileInfoKey) +
-                            VersionResourceSerializer.KEYBYTES (this._langIdAndCodePageKey) + this.GetStringsSize ()))
-        writer.Write (0us)
-        writer.Write (1us)
+                            VersionResourceSerializer.KEYBYTES VersionResourceSerializer.stringFileInfoKey +
+                            VersionResourceSerializer.KEYBYTES this._langIdAndCodePageKey + this.GetStringsSize ()))
+        writer.Write 0us
+        writer.Write 1us
         writer.Write (VersionResourceSerializer.stringFileInfoKey.ToCharArray ())
-        writer.Write (Array.zeroCreate (VersionResourceSerializer.KEYBYTES (VersionResourceSerializer.stringFileInfoKey) - VersionResourceSerializer.stringFileInfoKey.Length * 2): byte[])
+        writer.Write (Array.zeroCreate (VersionResourceSerializer.KEYBYTES VersionResourceSerializer.stringFileInfoKey - VersionResourceSerializer.stringFileInfoKey.Length * 2): byte[])
         Debug.Assert (writer.BaseStream.Position &&& 3L = 0L)
-        writer.Write (WORD (VersionResourceSerializer.HDRSIZE + VersionResourceSerializer.KEYBYTES (this._langIdAndCodePageKey) + this.GetStringsSize ()))
-        writer.Write (0us)
-        writer.Write (1us)
+        writer.Write (WORD (VersionResourceSerializer.HDRSIZE + VersionResourceSerializer.KEYBYTES this._langIdAndCodePageKey + this.GetStringsSize ()))
+        writer.Write 0us
+        writer.Write 1us
         writer.Write (this._langIdAndCodePageKey.ToCharArray ())
-        writer.Write (Array.zeroCreate (VersionResourceSerializer.KEYBYTES (this._langIdAndCodePageKey) - this._langIdAndCodePageKey.Length * 2): byte[])
+        writer.Write (Array.zeroCreate (VersionResourceSerializer.KEYBYTES this._langIdAndCodePageKey - this._langIdAndCodePageKey.Length * 2): byte[])
         Debug.Assert (writer.BaseStream.Position &&& 3L = 0L)
         Debug.Assert (writer.BaseStream.Position - debugPos = int64 dataSize - int64  (this.GetStringsSize ()))
         debugPos <- writer.BaseStream.Position
@@ -669,48 +669,48 @@ type Win32ResourceConversions () =
             let mutable (i: uint16) = 0us
             while (i < count) do
                 resStream.Position <- resStream.Position + 3L &&& ~~~3L
-                resWriter.Write (iconDirEntries.[(int i)].dwBytesInRes)
-                resWriter.Write (0x00000020u)
-                resWriter.Write (0xFFFFus)
-                resWriter.Write (RT_ICON)
-                resWriter.Write (0xFFFFus)
-                resWriter.Write ((i + 1us))
-                resWriter.Write (0x00000000u)
-                resWriter.Write (0x1010us)
-                resWriter.Write (0x0000us)
-                resWriter.Write (0x00000000u)
-                resWriter.Write (0x00000000u)
+                resWriter.Write iconDirEntries.[(int i)].dwBytesInRes
+                resWriter.Write 0x00000020u
+                resWriter.Write 0xFFFFus
+                resWriter.Write RT_ICON
+                resWriter.Write 0xFFFFus
+                resWriter.Write (i + 1us)
+                resWriter.Write 0x00000000u
+                resWriter.Write 0x1010us
+                resWriter.Write 0x0000us
+                resWriter.Write 0x00000000u
+                resWriter.Write 0x00000000u
                 iconStream.Position <- int64 iconDirEntries.[(int i)].dwImageOffset
-                resWriter.Write (iconReader.ReadBytes (int (iconDirEntries.[int i].dwBytesInRes)))
+                resWriter.Write (iconReader.ReadBytes (int iconDirEntries.[int i].dwBytesInRes))
                 i <- i + 1us
 
         let mutable (RT_GROUP_ICON: WORD) = (RT_ICON + 11us)
         resStream.Position <- resStream.Position + 3L &&& ~~~3L
         resWriter.Write (uint32 (3 * sizeof<WORD> + int count * 14))
-        resWriter.Write (0x00000020u)
-        resWriter.Write (0xFFFFus)
-        resWriter.Write (RT_GROUP_ICON)
-        resWriter.Write (0xFFFFus)
-        resWriter.Write (0x7F00us)
-        resWriter.Write (0x00000000u)
-        resWriter.Write (0x1030us)
-        resWriter.Write (0x0000us)
-        resWriter.Write (0x00000000u)
-        resWriter.Write (0x00000000u)
-        resWriter.Write (0x0000us)
-        resWriter.Write (0x0001us)
-        resWriter.Write (count)
+        resWriter.Write 0x00000020u
+        resWriter.Write 0xFFFFus
+        resWriter.Write RT_GROUP_ICON
+        resWriter.Write 0xFFFFus
+        resWriter.Write 0x7F00us
+        resWriter.Write 0x00000000u
+        resWriter.Write 0x1030us
+        resWriter.Write 0x0000us
+        resWriter.Write 0x00000000u
+        resWriter.Write 0x00000000u
+        resWriter.Write 0x0000us
+        resWriter.Write 0x0001us
+        resWriter.Write count
         do
             let mutable (i: uint16) = 0us
             while (i < count) do
-                resWriter.Write (iconDirEntries.[(int i)].bWidth)
-                resWriter.Write (iconDirEntries.[(int i)].bHeight)
-                resWriter.Write (iconDirEntries.[(int i)].bColorCount)
-                resWriter.Write (iconDirEntries.[(int i)].bReserved)
-                resWriter.Write (iconDirEntries.[(int i)].wPlanes)
-                resWriter.Write (iconDirEntries.[(int i)].wBitCount)
-                resWriter.Write (iconDirEntries.[(int i)].dwBytesInRes)
-                resWriter.Write ((i + 1us))
+                resWriter.Write iconDirEntries.[(int i)].bWidth
+                resWriter.Write iconDirEntries.[(int i)].bHeight
+                resWriter.Write iconDirEntries.[(int i)].bColorCount
+                resWriter.Write iconDirEntries.[(int i)].bReserved
+                resWriter.Write iconDirEntries.[(int i)].wPlanes
+                resWriter.Write iconDirEntries.[(int i)].wBitCount
+                resWriter.Write iconDirEntries.[(int i)].dwBytesInRes
+                resWriter.Write (i + 1us)
                 i <- i + 1us
         ()
 
@@ -746,16 +746,16 @@ type Win32ResourceConversions () =
         let mutable (headerSize: int) = 0x20
         resWriter.Write (uint32 dataSize)
         resWriter.Write (uint32 headerSize)
-        resWriter.Write (0xFFFFus)
+        resWriter.Write 0xFFFFus
         resWriter.Write (uint16 RT_VERSION)
-        resWriter.Write (0xFFFFus)
-        resWriter.Write (0x0001us)
-        resWriter.Write (0x00000000u)
-        resWriter.Write (0x0030us)
-        resWriter.Write (0x0000us)
-        resWriter.Write (0x00000000u)
-        resWriter.Write (0x00000000u)
-        ver.WriteVerResource (resWriter)
+        resWriter.Write 0xFFFFus
+        resWriter.Write 0x0001us
+        resWriter.Write 0x00000000u
+        resWriter.Write 0x0030us
+        resWriter.Write 0x0000us
+        resWriter.Write 0x00000000u
+        resWriter.Write 0x00000000u
+        ver.WriteVerResource resWriter
         Debug.Assert (resStream.Position - startPos = int64 dataSize + int64 headerSize)
 
     static member AppendManifestToResourceStream(resStream: Stream, manifestStream: Stream, isDll: bool) = 
@@ -763,17 +763,17 @@ type Win32ResourceConversions () =
         let mutable (RT_MANIFEST: WORD) = 24us
         let mutable resWriter = new BinaryWriter(resStream)
         resWriter.Write (uint32 manifestStream.Length)
-        resWriter.Write (0x00000020u)
-        resWriter.Write (0xFFFFus)
-        resWriter.Write (RT_MANIFEST)
-        resWriter.Write (0xFFFFus)
+        resWriter.Write 0x00000020u
+        resWriter.Write 0xFFFFus
+        resWriter.Write RT_MANIFEST
+        resWriter.Write 0xFFFFus
         resWriter.Write (if isDll then 0x0002us else 0x0001us)
-        resWriter.Write (0x00000000u)
-        resWriter.Write (0x1030us)
-        resWriter.Write (0x0000us)
-        resWriter.Write (0x00000000u)
-        resWriter.Write (0x00000000u)
-        manifestStream.CopyTo (resStream)
+        resWriter.Write 0x00000000u
+        resWriter.Write 0x1030us
+        resWriter.Write 0x0000us
+        resWriter.Write 0x00000000u
+        resWriter.Write 0x00000000u
+        manifestStream.CopyTo resStream
 
 
 type Win32Resource (data: byte[], codePage: DWORD, languageId: DWORD, id: int, name: string, typeId: int, typeName: string) =
@@ -815,7 +815,7 @@ type NativeResourceWriter () =
         resources.OrderBy ((fun d -> d), Comparer<_>.Create(Comparison<_> NativeResourceWriter.CompareResources)) :> IEnumerable<Win32Resource>
 
     static member SerializeWin32Resources (builder: BlobBuilder, theResources: IEnumerable<Win32Resource>, resourcesRva: int) = 
-        let theResources = NativeResourceWriter.SortResources (theResources)
+        let theResources = NativeResourceWriter.SortResources theResources
         let mutable (typeDirectory: Directory) = new Directory(String.Empty, 0)
         let mutable (nameDirectory: Directory) = Unchecked.defaultof<_>
         let mutable (languageDirectory: Directory) = Unchecked.defaultof<_>
@@ -824,7 +824,7 @@ type NativeResourceWriter () =
         let mutable (lastID: int) = Int32.MinValue
         let mutable (lastName: string) = Unchecked.defaultof<_>
         let mutable (sizeOfDirectoryTree: uint32) = 16u
-        for (r: Win32Resource) in theResources do
+        for r: Win32Resource in theResources do
             let mutable (typeDifferent: bool) = r.TypeId < 0 && r.TypeName <> lastTypeName || r.TypeId > lastTypeID
             if typeDifferent then 
                 lastTypeID <- r.TypeId
@@ -836,7 +836,7 @@ type NativeResourceWriter () =
                     typeDirectory.NumberOfIdEntries <- typeDirectory.NumberOfIdEntries + 1us
                 sizeOfDirectoryTree <- sizeOfDirectoryTree + 24u
                 nameDirectory <- new Directory(lastTypeName, lastTypeID)
-                typeDirectory.Entries.Add (nameDirectory)
+                typeDirectory.Entries.Add nameDirectory
             if typeDifferent || r.Id < 0 && r.Name <> lastName || r.Id > lastID then 
                 lastID <- r.Id
                 lastName <- r.Name
@@ -847,10 +847,10 @@ type NativeResourceWriter () =
                     nameDirectory.NumberOfIdEntries <- nameDirectory.NumberOfIdEntries + 1us
                 sizeOfDirectoryTree <- sizeOfDirectoryTree + 24u
                 languageDirectory <- new Directory (lastName, lastID)
-                nameDirectory.Entries.Add (languageDirectory)
+                nameDirectory.Entries.Add languageDirectory
             languageDirectory.NumberOfIdEntries <- languageDirectory.NumberOfIdEntries + 1us
             sizeOfDirectoryTree <- sizeOfDirectoryTree + 8u
-            languageDirectory.Entries.Add (r)
+            languageDirectory.Entries.Add r
         let mutable dataWriter = new BlobBuilder()
         NativeResourceWriter.WriteDirectory (typeDirectory, builder, 0u, 0u, sizeOfDirectoryTree, resourcesRva, dataWriter)
         builder.LinkSuffix dataWriter
@@ -879,7 +879,7 @@ type NativeResourceWriter () =
                     | :? Directory as subDir ->
                         id <- subDir.ID
                         name <- subDir.Name
-                        if level = 0u then k <- k + NativeResourceWriter.SizeOfDirectory (subDir)
+                        if level = 0u then k <- k + NativeResourceWriter.SizeOfDirectory subDir
                         else k <- k + 16u + 8u * uint32 subDir.Entries.Count
                         true
                     | :? Win32Resource as r ->
@@ -899,25 +899,25 @@ type NativeResourceWriter () =
                                     r.Name
                                 else
                                     Unchecked.defaultof<_>
-                        dataWriter.WriteUInt32 ((uint32 virtualAddressBase + sizeOfDirectoryTree + 16u + uint32 dataWriter.Count))
+                        dataWriter.WriteUInt32 (uint32 virtualAddressBase + sizeOfDirectoryTree + 16u + uint32 dataWriter.Count)
                         let mutable (data: byte[]) = (new List<byte> (r.Data)).ToArray ()
                         dataWriter.WriteUInt32 (uint32 data.Length)
-                        dataWriter.WriteUInt32 (r.CodePage)
+                        dataWriter.WriteUInt32 r.CodePage
                         dataWriter.WriteUInt32 0u
-                        dataWriter.WriteBytes (data)
+                        dataWriter.WriteBytes data
                         while (dataWriter.Count % 4 <> 0) do
-                            dataWriter.WriteByte (0uy)
+                            dataWriter.WriteByte 0uy
                         false
                     | e -> failwithf "Unknown entry %s" (if isNull e then "<NULL>" else e.GetType().FullName)
-                if id >= 0 then writer.WriteInt32 (id)
+                if id >= 0 then writer.WriteInt32 id
                 else 
                     if name = Unchecked.defaultof<_> then
                         name <- String.Empty
                     writer.WriteUInt32 (nameOffset ||| 0x80000000u)
                     dataWriter.WriteUInt16 (uint16 name.Length)
-                    dataWriter.WriteUTF16 (name)
+                    dataWriter.WriteUTF16 name
                 if isDir then writer.WriteUInt32 (directoryOffset ||| 0x80000000u)
-                else writer.WriteUInt32 (nameOffset)
+                else writer.WriteUInt32 nameOffset
                 i <- i + 1u
 
         k <- offset + 16u + n * 8u
@@ -928,7 +928,7 @@ type NativeResourceWriter () =
                 | :? Directory as subDir ->
                     NativeResourceWriter.WriteDirectory (subDir, writer, k, (level + 1u), sizeOfDirectoryTree, virtualAddressBase, dataWriter)
                     if level = 0u then
-                        k <- k + NativeResourceWriter.SizeOfDirectory (subDir)
+                        k <- k + NativeResourceWriter.SizeOfDirectory subDir
                     else
                         k <- k + 16u + 8u * uint32 subDir.Entries.Count
                 | _ -> ()

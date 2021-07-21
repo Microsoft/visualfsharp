@@ -148,7 +148,7 @@ type internal FscCompiler(legacyReferenceResolver) =
         let errorRanges = args |> Seq.exists errorRangesArg
         let vsErrors = args |> Seq.exists vsErrorsArg
 
-        let (ok, result) = compiler.Compile(args)
+        let ok, result = compiler.Compile(args)
         let exitCode = if ok then 0 else 1
         
         let lines =
@@ -180,9 +180,9 @@ module internal CompilerHelpers =
     let parseCommandLine (commandLine : string) =
         let folder (inQuote : bool, currArg : string, argLst : string list) ch =
             match (ch, inQuote) with
-            | ('"', _) ->
+            | '"', _ ->
                 (not inQuote, currArg, argLst)
-            | (' ', false) ->
+            | ' ', false ->
                 if currArg.Length > 0 then (inQuote, "", currArg :: argLst)
                 else (inQuote, "", argLst)
             | _ ->
@@ -206,7 +206,7 @@ module internal CompilerHelpers =
         try
             try
                 Directory.SetCurrentDirectory directory
-                let (exitCode, output) = FscCompiler(legacyReferenceResolver).Compile(args)
+                let exitCode, output = FscCompiler(legacyReferenceResolver).Compile(args)
                 let consoleOut = sw.ToString().Split([|'\r'; '\n'|], StringSplitOptions.RemoveEmptyEntries)
                 let consoleError = ew.ToString().Split([|'\r'; '\n'|], StringSplitOptions.RemoveEmptyEntries)
                 exitCode, [| yield! consoleOut; yield! output |], consoleError

@@ -424,7 +424,7 @@ type internal CancellableBuilder =
 
     member inline TryWith: e:Cancellable<'T> * handler:(exn -> Cancellable<'T>) -> Cancellable<'T>
 
-    member inline Using: resource:'c * e:('c -> Cancellable<'T>) -> Cancellable<'T> when 'c :> System.IDisposable
+    member inline Using: resource:'c * e:('c -> Cancellable<'T>) -> Cancellable<'T> when 'c :> IDisposable
 
     member inline Zero: unit -> Cancellable<unit>
   
